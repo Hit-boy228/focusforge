@@ -40,8 +40,8 @@ void CreateTaskScene::Start(const dto::TgMessage& msg) {
             req.title     = parsed.title;
             req.priority  = parsed.priority.value_or(domain::TaskPriority::kMedium);
             req.tag_names = parsed.tags;
-            if (!parsed.deadline_hint.empty()) {
-                if (auto iso = core::ParseDeadlineHint(parsed.deadline_hint))
+            if (parsed.deadline_hint && !parsed.deadline_hint->empty()) {
+                if (auto iso = core::ParseDeadlineHint(*parsed.deadline_hint))
                     req.deadline_iso = *iso;
             }
             try {
