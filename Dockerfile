@@ -13,7 +13,6 @@ WORKDIR /build
 # Копируем build-манифесты первыми (кешируем слой зависимостей)
 COPY CMakeLists.txt .
 COPY conanfile.py .
-COPY tests/CMakeLists.txt tests/
 
 # Устанавливаем зависимости через Conan (без userver — он в базовом образе)
 RUN pip install conan==2.0.17 --quiet && \
@@ -21,7 +20,6 @@ RUN pip install conan==2.0.17 --quiet && \
 
 # Копируем исходники
 COPY src/ src/
-COPY tests/ tests/
 COPY configs/ configs/
 
 # Сборка

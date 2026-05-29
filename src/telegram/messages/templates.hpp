@@ -32,16 +32,22 @@ const std::string kWelcomeBack = R"(
 
 // ── Task creation ─────────────────────────────────────────────────────────────
 const std::string kAskTaskTitle =
-    "📝 Введи название задачи:\n\n<i>Или быстрый ввод: «купить молоко завтра 18:00 p2 #дом»</i>";
+    "📝 <b>Новая задача</b>\n\n"
+    "Введи название:\n\n"
+    "<i>💡 Быстрый ввод: <code>/task купить молоко завтра 18:00 p2 #дом</code></i>";
 
-const std::string kAskTaskPriority = "🎯 Выбери приоритет:";
+const std::string kAskTaskPriority = "🎯 <b>Приоритет задачи</b>\n\nВыбери уровень важности:";
 
 const std::string kAskTaskDeadline =
-    "📅 Укажи дедлайн (или пропусти):\n\n"
-    "Формат: <code>завтра</code>, <code>15.01</code>, <code>2024-01-15</code>, <code>18:00</code>";
+    "📅 <b>Дедлайн</b>\n\n"
+    "Форматы: <code>завтра</code>, <code>сегодня</code>, <code>15.01</code>, "
+    "<code>15.01.2025</code>, <code>18:00</code>, <code>завтра 18:00</code>\n\n"
+    "Или нажми «Пропустить»:";
 
 const std::string kAskTaskTags =
-    "🏷 Добавь теги через пробел (или пропусти):\n\nПример: <code>#работа #срочно</code>";
+    "🏷 <b>Теги</b>\n\n"
+    "Введи хэштеги через пробел: <code>#работа #срочно</code>\n\n"
+    "Или нажми «Пропустить»:";
 
 const std::string kTaskCreated =
     "✅ <b>Задача создана!</b>\n\n{task_card}";

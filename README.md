@@ -17,27 +17,27 @@ C++ Telegram-бот для управления задачами и продук
 | Команды `/stats`, `/week`, `/streak`, `/goals`, `/settings`, `/help` | ✅ Работают |
 | PostgreSQL репозитории | ✅ Работают |
 | Redis Sentinel | ✅ Работает |
+| `/health/live` эндпоинт | ✅ Работает |
 | MongoDB репозитории | 🔧 В разработке |
 | Callback-кнопки (inline keyboards) | 🔧 В разработке |
 | Тесты (unit / integration) | 🔧 В разработке |
 | Nginx / production deploy | 🔧 В разработке |
-| `/health/live` эндпоинт | ❌ Не реализован |
 
 ---
 
 ## Архитектура
 
 ```
-Telegram API ──→ cloudflared tunnel ──→ userver App ──→ PostgreSQL (source of truth)
-                                                      ──→ MongoDB    (preferences, event logs)
-                                                      ──→ Redis      (cache, locks, FSM state)
+Telegram API ──→ localhost.run tunnel ──→ userver App ──→ PostgreSQL (source of truth)
+                                                       ──→ MongoDB    (preferences, event logs)
+                                                       ──→ Redis      (cache, locks, FSM state)
 ```
 
-Подробнее: [docs/architecture.md](docs/architecture.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
+Туннель поднимается автоматически при `docker compose up` — никаких дополнительных действий не нужно.
 
 ---
 
-## Быстрый старт (локально)
+## Быстрый старт
 
 ### Требования
 
@@ -47,23 +47,30 @@ Telegram API ──→ cloudflared tunnel ──→ userver App ──→ Postgr
 ### 1. Клонирование
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/focusforge.git
+git clone https://github.com/Hit-boy228/focusforge.git
 cd focusforge
 ```
 
-### 2. Настройка секретов
+### 2. Настройка
 
 ```bash
-# Скопируйте шаблоны и заполните реальными значениями
 cp .env.example .env
 cp configs/config_vars.example.yaml configs/config_vars.yaml
 cp configs/secrets.example.json configs/secdist.json
 ```
 
-Откройте `.env` и `configs/config_vars.yaml` — заполните:
-- `TELEGRAM_BOT_TOKEN` — токен от BotFather
-- `TELEGRAM_WEBHOOK_SECRET` — произвольная случайная строка (≥ 32 символа)
-- Пароли для PostgreSQL, MongoDB, Redis
+Откройте `.env` и задайте:
+
+| Переменная | Что вписать |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | Токен от [@BotFather](https://t.me/botfather) |
+| `TELEGRAM_WEBHOOK_SECRET` | Любая случайная строка ≥ 32 символа |
+| `POSTGRES_PASSWORD` | Придумайте пароль |
+| `MONGO_PASSWORD` | Придумайте пароль |
+
+Откройте `configs/config_vars.yaml` и пропишите **те же пароли** в строках `pg_dsn` и `mongo_dsn`.
+
+> `configs/secdist.json` для локального запуска редактировать не нужно.
 
 ### 3. Запуск
 
@@ -71,21 +78,25 @@ cp configs/secrets.example.json configs/secdist.json
 docker compose up -d --build
 ```
 
-### 4. Webhook через cloudflared (локальный dev)
+После старта контейнер `tunnel` автоматически:
+1. Открывает HTTPS-туннель через [localhost.run](https://localhost.run)
+2. Регистрирует webhook в Telegram
+
+Проверить можно через логи:
 
 ```bash
-# Установите cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/
-cloudflared tunnel --url http://localhost:8080 --no-autoupdate > /tmp/cf.log 2>&1 &
-sleep 8
-
-TUNNEL_URL=$(grep -Eo "https://[a-zA-Z0-9-]+\.trycloudflare\.com" /tmp/cf.log | head -1)
-
-curl -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
-  -H "Content-Type: application/json" \
-  -d "{\"url\":\"${TUNNEL_URL}/webhook/${TELEGRAM_BOT_TOKEN}\",\"secret_token\":\"${TELEGRAM_WEBHOOK_SECRET}\"}"
+docker compose logs -f tunnel
 ```
 
-> **Внимание:** URL туннеля меняется при каждом перезапуске cloudflared — нужно перерегистрировать webhook.
+Ожидаемый вывод:
+```
+[tunnel] Connecting localhost.run → http://focusforge:8080
+[tunnel] URL: https://xxxxxxxxxxxxxxxx.lhr.life
+[tunnel] setWebhook → https://xxxxxxxxxxxxxxxx.lhr.life/webhook/<token>
+[tunnel] Telegram: {"ok":true,"result":true,"description":"Webhook was set"}
+```
+
+> **Внимание:** URL туннеля меняется при каждом рестарте контейнера — webhook перерегистрируется автоматически.
 
 ---
 
@@ -131,12 +142,15 @@ src/
 ├── observability/  — метрики, tracing
 └── utils/          — вспомогательные утилиты
 configs/
-├── static_config.yaml         — userver конфигурация компонентов
-├── config_vars.example.yaml   — ШАБЛОН переменных (скопируйте → config_vars.yaml)
-├── secrets.example.json       — ШАБЛОН secdist (скопируйте → secdist.json)
-└── secdist.json               — [gitignored] реальные настройки Redis
-migrations/                    — SQL миграции PostgreSQL
-docs/                          — ADR, архитектура, API
+├── static_config.yaml           — userver конфигурация компонентов
+├── config_vars.example.yaml     — ШАБЛОН переменных → скопировать в config_vars.yaml
+├── secrets.example.json         — ШАБЛОН secdist    → скопировать в secdist.json
+└── secdist.json                 — [gitignored] настройки Redis Sentinel
+deploy/
+├── tunnel/                      — контейнер SSH-туннеля (localhost.run)
+├── migrator/                    — скрипт применения SQL-миграций
+└── postgres/                    — конфиг PostgreSQL
+migrations/                      — SQL миграции
 ```
 
 ---
@@ -146,13 +160,11 @@ docs/                          — ADR, архитектура, API
 | Переменная | Обязательная | Описание |
 |---|:---:|---|
 | `TELEGRAM_BOT_TOKEN` | ✅ | Токен бота от BotFather |
-| `TELEGRAM_WEBHOOK_SECRET` | ✅ | Секрет для верификации webhook |
-| `POSTGRES_PASSWORD` | ✅ | Пароль PostgreSQL |
-| `MONGO_PASSWORD` | ✅ | Пароль MongoDB |
-| `REDIS_PASSWORD` | ❌ | Пароль Redis (по умолчанию без пароля) |
-| `LOG_LEVEL` | ❌ | `debug` / `info` / `warning` |
-
-Полный список: [.env.example](.env.example)
+| `TELEGRAM_WEBHOOK_SECRET` | ✅ | Секрет для верификации webhook (≥ 32 символа) |
+| `POSTGRES_PASSWORD` | ✅ | Пароль PostgreSQL — должен совпадать с `pg_dsn` в `config_vars.yaml` |
+| `MONGO_PASSWORD` | ✅ | Пароль MongoDB — должен совпадать с `mongo_dsn` в `config_vars.yaml` |
+| `REDIS_PASSWORD` | ❌ | Пароль Redis (в dev не нужен) |
+| `LOG_LEVEL` | ❌ | `debug` / `info` / `warning` (по умолчанию `debug`) |
 
 ---
 
@@ -162,15 +174,22 @@ docs/                          — ADR, архитектура, API
 # Пересборка приложения
 docker compose build focusforge
 
-# Логи
+# Логи всех сервисов
+docker compose logs -f
+
+# Логи конкретного сервиса
 docker compose logs -f focusforge
+docker compose logs -f tunnel
 
 # Подключиться к PostgreSQL
 docker compose exec postgres psql -U focusforge -d focusforge
+
+# Статус webhook
+curl -s "https://api.telegram.org/bot<TOKEN>/getWebhookInfo" | python3 -m json.tool
 ```
 
 ---
 
 ## Лицензия
 
-MIT © 2024–2025 Alex
+MIT © 2024–2025 [Hit-boy228](https://github.com/Hit-boy228)

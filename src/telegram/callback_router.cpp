@@ -38,8 +38,14 @@ void CallbackRouter::Route(const dto::TgCallbackQuery& cq) {
     try {
         const std::string state = conv_service_.GetState(cq.from.id);
 
-        // Сценарные callbacks: priority:* во время создания задачи
+        // Сценарные callbacks: priority:* или task:skip:* во время создания задачи
         if (parts[0] == "priority" && state.rfind("TASK_", 0) == 0) {
+            create_task_scene_.HandleCallback(cq, state);
+            AnswerCallback(cq.id);
+            return;
+        }
+        if (parts[0] == "task" && parts.size() >= 3 && parts[1] == "skip"
+                && state.rfind("TASK_", 0) == 0) {
             create_task_scene_.HandleCallback(cq, state);
             AnswerCallback(cq.id);
             return;

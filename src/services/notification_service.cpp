@@ -27,6 +27,40 @@ std::string NotificationService::BuildApiUrl(const std::string& method) const {
     return "https://api.telegram.org/bot" + bot_token_ + "/" + method;
 }
 
+void NotificationService::SendRequest(const dto::SendMessageRequest& req) {
+    if (bot_token_.empty()) {
+        LOG_WARNING() << "TELEGRAM_BOT_TOKEN not set, skip SendRequest";
+        return;
+    }
+    userver::formats::json::ValueBuilder body;
+    body["chat_id"]    = req.chat_id;
+    body["text"]       = req.text;
+    body["parse_mode"] = req.parse_mode;
+    body["disable_web_page_preview"] = req.disable_web_page_preview;
+
+    if (req.reply_markup && !req.reply_markup->empty()) {
+        userver::formats::json::ValueBuilder rows(
+            userver::formats::json::Type::kArray);
+        for (const auto& row : *req.reply_markup) {
+            userver::formats::json::ValueBuilder btns(
+                userver::formats::json::Type::kArray);
+            for (const auto& btn : row) {
+                userver::formats::json::ValueBuilder b;
+                b["text"] = btn.text;
+                if (!btn.url.empty()) b["url"] = btn.url;
+                else b["callback_data"] = btn.callback_data;
+                btns.PushBack(b.ExtractValue());
+            }
+            rows.PushBack(btns.ExtractValue());
+        }
+        userver::formats::json::ValueBuilder kb;
+        kb["inline_keyboard"] = rows.ExtractValue();
+        body["reply_markup"]  = kb.ExtractValue();
+    }
+
+    PostToTelegramApi("sendMessage", body.ExtractValue());
+}
+
 void NotificationService::SendMessage(int64_t chat_id,
                                        const std::string& text,
                                        const std::string& parse_mode) {

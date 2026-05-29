@@ -18,6 +18,7 @@
 #include "domain/enums.hpp"
 #include "dto/task_requests.hpp"
 #include "dto/report_requests.hpp"
+#include "core/text.hpp"
 #include "core/time.hpp"
 #include <userver/logging/log.hpp>
 
@@ -88,15 +89,24 @@ void Router::HandleCommand(const dto::TgMessage& msg,
                 "📋 <b>Задач нет</b>\n\nСоздай первую командой /task");
             return;
         }
-        std::string text = "📋 <b>Задачи</b> (" + std::to_string(total) + "):\n\n";
+        std::string text = "📋 <b>Мои задачи</b> (" + std::to_string(total) + ")\n\n";
         for (const auto& t : tasks) {
             text += domain::StatusEmoji(t.status) + " ";
             text += domain::PriorityEmoji(t.priority) + " ";
-            text += "<b>" + t.title + "</b>\n";
+            text += "<b>" + core::EscapeHtml(core::Truncate(t.title, 40)) + "</b>";
+            if (t.deadline) {
+                text += "  📅 " + core::FormatDate(*t.deadline);
+                if (t.IsOverdue()) text += " ⚠️";
+            }
+            if (!t.tags.empty()) {
+                text += "\n    ";
+                for (const auto& tag : t.tags) text += "#" + tag.name + " ";
+            }
+            text += "\n";
         }
         if (total > 10)
-            text += "\n<i>...и ещё " + std::to_string(total - 10) + "</i>";
-        text += "\n\nДобавить: /task";
+            text += "\n<i>...ещё " + std::to_string(total - 10) + " задач</i>";
+        text += "\n➕ /task — добавить задачу";
         notify_.SendMessage(msg.chat.id, text);
         return;
     }

@@ -70,10 +70,28 @@ domain::Task TaskService::CreateTask(const dto::CreateTaskRequest& req) {
         task.tags.push_back(tag);
     }
 
-    auto pg = task_repo_.GetCluster();
-    auto  trx = pg->Begin("create_task",
+    auto pg  = task_repo_.GetCluster();
+    auto trx = pg->Begin("create_task",
         userver::storages::postgres::ClusterHostType::kMaster, {});
     auto saved = task_repo_.Insert(trx, task);
+
+    // Persist tags: upsert into tags table, then link via task_tags
+    for (const auto& tag : task.tags) {
+        auto tag_res = trx.Execute(
+            "INSERT INTO tags (user_id, name, color) "
+            "VALUES ($1::uuid, $2, '#6B7280') "
+            "ON CONFLICT (user_id, name) DO UPDATE SET name = EXCLUDED.name "
+            "RETURNING id::text",
+            tag.user_id, tag.name);
+        if (!tag_res.IsEmpty()) {
+            trx.Execute(
+                "INSERT INTO task_tags (task_id, tag_id) "
+                "VALUES ($1::uuid, $2::uuid) ON CONFLICT DO NOTHING",
+                saved.id, tag_res.Front()[0].As<std::string>());
+        }
+    }
+    saved.tags = task.tags;
+
     trx.Commit();
 
     // Кешируем idempotency
