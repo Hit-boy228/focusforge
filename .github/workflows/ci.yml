@@ -14,7 +14,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install clang-format
-        run: sudo apt-get install -y clang-format-17
+        run: |
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key \
+            | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+          echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" \
+            | sudo tee /etc/apt/sources.list.d/llvm.list
+          sudo apt-get update -qq
+          sudo apt-get install -y clang-format-17
       - name: Check formatting
         run: ./scripts/format.sh --check
 
@@ -28,6 +34,9 @@ jobs:
 
       - name: Install Conan
         run: pip install conan==2.0.17
+
+      - name: Create Conan default profile
+        run: conan profile detect --force
 
       - name: Configure (CMake + Conan)
         run: |
