@@ -9,6 +9,7 @@
 #include "domain/focus_session.hpp"
 #include "domain/reminder.hpp"
 #include "domain/report.hpp"          // WeeklyReport
+#include "dto/telegram_update.hpp"    // SendMessageRequest
 
 namespace focusforge::services {
 
@@ -21,6 +22,9 @@ public:
 
     void SendMessage(int64_t chat_id, const std::string& text,
                      const std::string& parse_mode = "HTML");
+
+    // Отправляет полный запрос — включая inline-клавиатуру если задана
+    void SendRequest(const dto::SendMessageRequest& req);
 
     void SendSessionStarted(int64_t chat_id, const domain::FocusSession& s);
     void SendSessionCompleted(int64_t chat_id, const domain::FocusSession& s);

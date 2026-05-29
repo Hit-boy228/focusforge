@@ -1,8 +1,11 @@
 #include "time.hpp"
 
+#include <algorithm>
 #include <array>
+#include <cctype>
 #include <ctime>
 #include <iomanip>
+#include <regex>
 #include <sstream>
 
 namespace focusforge::core {
@@ -110,6 +113,76 @@ TimePoint StartOfWeek(TimePoint tp, const std::string& timezone) {
     // Понедельник = начало недели (в C тм_wday: воскресенье=0)
     int days_since_monday = (tm.tm_wday + 6) % 7;
     return day - std::chrono::hours(24 * days_since_monday);
+}
+
+std::optional<std::string> ParseDeadlineHint(const std::string& hint_raw) {
+    if (hint_raw.empty()) return std::nullopt;
+
+    // Direct ISO 8601 – fast path
+    if (auto tp = ParseIso8601(hint_raw)) return FormatIso8601(*tp);
+
+    // Lowercase copy for keyword matching
+    std::string h = hint_raw;
+    std::transform(h.begin(), h.end(), h.begin(),
+                   [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+
+    // Extract optional time component "hh:mm"
+    int hour = 9, minute = 0;
+    std::string remaining = h;
+    std::regex time_re(R"(\b(\d{1,2}):(\d{2})\b)");
+    std::smatch tm_m;
+    if (std::regex_search(h, tm_m, time_re)) {
+        int hh = std::stoi(tm_m[1]), mm = std::stoi(tm_m[2]);
+        if (hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59) {
+            hour = hh; minute = mm;
+        }
+        remaining = tm_m.prefix().str() + " " + tm_m.suffix().str();
+        // Trim
+        auto start = remaining.find_first_not_of(" \t");
+        auto end   = remaining.find_last_not_of(" \t");
+        remaining = (start == std::string::npos) ? "" : remaining.substr(start, end - start + 1);
+    }
+
+    auto now = NowUtc();
+    auto t0  = Clock::to_time_t(now);
+    std::tm base{};
+    GmTime(t0, &base);
+    std::tm tgt = base;
+
+    if (remaining == "tomorrow" || remaining == "завтра") {
+        tgt.tm_mday += 1;
+    } else if (remaining == "today" || remaining == "сегодня" || remaining.empty()) {
+        // today – keep date
+    } else {
+        // dd.mm[.yyyy] or dd/mm[/yyyy]
+        std::regex dmy_re(R"((\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?)");
+        std::smatch dmy;
+        // yyyy-mm-dd
+        std::regex ymd_re(R"((\d{4})-(\d{2})-(\d{2}))");
+        std::smatch ymd;
+        if (std::regex_search(remaining, dmy, dmy_re)) {
+            tgt.tm_mday = std::stoi(dmy[1]);
+            tgt.tm_mon  = std::stoi(dmy[2]) - 1;
+            if (dmy[3].matched && dmy[3].length() > 0) {
+                int y = std::stoi(dmy[3]);
+                if (y < 100) y += 2000;
+                tgt.tm_year = y - 1900;
+            }
+        } else if (std::regex_search(remaining, ymd, ymd_re)) {
+            tgt.tm_year = std::stoi(ymd[1]) - 1900;
+            tgt.tm_mon  = std::stoi(ymd[2]) - 1;
+            tgt.tm_mday = std::stoi(ymd[3]);
+        } else {
+            return std::nullopt;
+        }
+    }
+
+    tgt.tm_hour = hour;
+    tgt.tm_min  = minute;
+    tgt.tm_sec  = 0;
+    auto tt = TimegmUtc(&tgt);
+    if (tt == static_cast<std::time_t>(-1)) return std::nullopt;
+    return FormatIso8601(Clock::from_time_t(tt));
 }
 
 }  // namespace focusforge::core

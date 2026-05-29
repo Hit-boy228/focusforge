@@ -19,6 +19,7 @@ public:
     static dto::InlineKeyboardMarkup ConfirmCancel(const std::string& confirm_cb,
                                                     const std::string& cancel_cb);
     static dto::InlineKeyboardMarkup WeeklyReviewActions();
+    static dto::InlineKeyboardMarkup SkipButton(const std::string& callback_data);
 };
 
 }  // namespace focusforge::telegram

@@ -42,28 +42,29 @@ dto::SendMessageRequest ReplyBuilder::ConfirmDialog(
 dto::SendMessageRequest ReplyBuilder::TaskCard(int64_t chat_id,
                                                 const domain::Task& t) {
     std::string text;
+    text += "✅ <b>Задача создана!</b>\n\n";
     text += domain::StatusEmoji(t.status) + " <b>"
           + core::EscapeHtml(t.title) + "</b>\n";
-    text += domain::PriorityEmoji(t.priority) + " Приоритет: "
+    text += domain::PriorityEmoji(t.priority) + " "
           + domain::ToString(t.priority) + "\n";
     if (t.deadline) {
-        text += "📅 Дедлайн: " + core::FormatHuman(*t.deadline) + "\n";
-        if (t.IsOverdue()) text += "⚠️ <b>Просрочена!</b>\n";
+        text += "📅 " + core::FormatHuman(*t.deadline);
+        if (t.IsOverdue()) text += "  ⚠️ <b>Просрочена!</b>";
+        text += "\n";
     }
     if (t.estimated_minutes)
-        text += "⏱ Оценка: " + core::FormatDuration(*t.estimated_minutes) + "\n";
+        text += "⏱ " + core::FormatDuration(*t.estimated_minutes) + "\n";
     if (!t.tags.empty()) {
         text += "🏷 ";
         for (const auto& tag : t.tags) text += "#" + tag.name + " ";
         text += "\n";
     }
     if (!t.subtasks.empty()) {
-        text += "\n📋 Подзадачи: "
-              + std::to_string(t.SubtasksCompleted()) + "/"
-              + std::to_string(t.subtasks.size()) + "\n";
+        text += "\n📋 " + std::to_string(t.SubtasksCompleted()) + "/"
+              + std::to_string(t.subtasks.size()) + " подзадач\n";
         text += core::ProgressBar(t.SubtaskCompletionRate()) + "\n";
     }
-    text += "\n<i>ID: " + t.id.substr(0,8) + "...</i>";
+    text += "\n<code>" + t.id.substr(0, 8) + "</code>";
     return Prompt(chat_id, text, KeyboardBuilder::TaskActions(t.id, t.status));
 }
 

@@ -48,4 +48,10 @@ int MinutesBetween(TimePoint from, TimePoint to);
 /// Истекло ли время (tp < now)
 bool IsOverdue(TimePoint deadline, TimePoint now = NowUtc());
 
+/// Парсит пользовательский дедлайн-хинт в ISO 8601 UTC.
+/// Поддерживает: "завтра/tomorrow", "сегодня/today",
+/// "dd.mm", "dd.mm.yyyy", "yyyy-mm-dd", "hh:mm",
+/// а также комбинации типа "завтра 18:00", "15.01 09:00".
+std::optional<std::string> ParseDeadlineHint(const std::string& hint);
+
 }  // namespace focusforge::core

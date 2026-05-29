@@ -55,12 +55,16 @@ dto::InlineKeyboardMarkup KeyboardBuilder::FocusModeSelector() {
 }
 
 dto::InlineKeyboardMarkup KeyboardBuilder::PrioritySelector() {
-    return {{
-        Btn{"🔵 Низкий",    "priority:low",      ""},
-        Btn{"🟡 Средний",   "priority:medium",   ""},
-        Btn{"🟠 Высокий",   "priority:high",     ""},
-        Btn{"🔴 Критичный", "priority:critical",  ""},
-    }};
+    return {
+        {Btn{"🔵 Низкий",    "priority:low",      ""},
+         Btn{"🟡 Средний",   "priority:medium",   ""}},
+        {Btn{"🟠 Высокий",   "priority:high",     ""},
+         Btn{"🔴 Критичный", "priority:critical",  ""}},
+    };
+}
+
+dto::InlineKeyboardMarkup KeyboardBuilder::SkipButton(const std::string& callback_data) {
+    return {{Btn{"⏩ Пропустить", callback_data, ""}}};
 }
 
 dto::InlineKeyboardMarkup KeyboardBuilder::SnoozeOptions(
