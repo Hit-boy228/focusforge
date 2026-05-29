@@ -1,0 +1,23 @@
+# configs/environments/staging.yaml
+# Staging окружение (Docker Compose / k8s).
+# Секреты задаются через переменные окружения; secdist.json генерируется entrypoint-скриптом.
+
+worker_threads: 4
+io_threads: 4
+
+server_port: 8080
+monitor_port: 8085
+
+log_level: debug
+log_file: "@stderr"
+
+config_cache_path: /tmp/focusforge_config_cache_staging
+
+pg_dsn: "postgresql://focusforge:${POSTGRES_PASSWORD}@postgres:5432/focusforge_staging?connect_timeout=5&application_name=focusforge_staging"
+mongo_dsn: "mongodb://focusforge:${MONGO_PASSWORD}@mongo:27017/focusforge_staging?authSource=admin"
+redis_secdist_alias: focusforge
+
+secdist_path: /app/configs/secdist.json
+
+telegram_bot_token: "${TELEGRAM_BOT_TOKEN}"
+telegram_webhook_secret: "${TELEGRAM_WEBHOOK_SECRET}"

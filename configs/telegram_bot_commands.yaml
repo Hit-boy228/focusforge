@@ -1,0 +1,38 @@
+# Список команд Telegram-бота для регистрации через setMyCommands API
+# Используется скриптом scripts/register_commands.sh
+
+commands:
+  - command: start
+    description: "Начать работу / главное меню"
+  - command: task
+    description: "Создать новую задачу"
+  - command: tasks
+    description: "Мои задачи"
+  - command: today
+    description: "Задачи на сегодня"
+  - command: plan
+    description: "Умный план дня"
+  - command: focus
+    description: "Запустить фокус-сессию (Pomodoro / Deep Work)"
+  - command: stop
+    description: "Остановить текущую сессию"
+  - command: pause
+    description: "Пауза / продолжить сессию"
+  - command: done
+    description: "Завершить задачу: /done [id]"
+  - command: remind
+    description: "Создать напоминание"
+  - command: stats
+    description: "Статистика за сегодня"
+  - command: week
+    description: "Недельный отчёт"
+  - command: review
+    description: "Ретроспектива недели"
+  - command: inbox
+    description: "Быстрый ввод задачи (Quick Capture)"
+  - command: settings
+    description: "Настройки профиля и бота"
+  - command: help
+    description: "Справка по командам"
+  - command: cancel
+    description: "Отменить текущее действие"

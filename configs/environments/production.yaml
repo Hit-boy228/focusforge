@@ -1,0 +1,23 @@
+# configs/environments/production.yaml
+# Production окружение (Docker Compose / k8s).
+# Секреты задаются через переменные окружения; secdist.json генерируется entrypoint-скриптом.
+
+worker_threads: 8
+io_threads: 8
+
+server_port: 8080
+monitor_port: 8085
+
+log_level: info
+log_file: "@stderr"
+
+config_cache_path: /tmp/focusforge_config_cache
+
+pg_dsn: "postgresql://focusforge:${POSTGRES_PASSWORD}@postgres:5432/focusforge?connect_timeout=5&application_name=focusforge&sslmode=prefer"
+mongo_dsn: "mongodb://focusforge:${MONGO_PASSWORD}@mongo:27017/focusforge?authSource=admin&ssl=true"
+redis_secdist_alias: focusforge
+
+secdist_path: /app/configs/secdist.json
+
+telegram_bot_token: "${TELEGRAM_BOT_TOKEN}"
+telegram_webhook_secret: "${TELEGRAM_WEBHOOK_SECRET}"

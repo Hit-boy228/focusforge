@@ -1,0 +1,87 @@
+# ==============================================================================
+# Dev Container compose override
+# Добавляет сервис focusforge-dev поверх основного docker-compose.yml
+# VS Code подключается именно к этому контейнеру
+# ==============================================================================
+
+version: "3.9"
+
+services:
+  # Переопределяем основные сервисы — убираем проброс портов наружу,
+  # т.к. они доступны внутри общей сети
+
+  postgres:
+    ports: [] # Доступен внутри сети по имени «postgres»
+
+  mongo:
+    ports: []
+
+  redis:
+    ports: []
+
+  # ── Dev Container (VS Code подключается сюда) ─────────────────────────────
+  focusforge-dev:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        USERNAME: vscode
+        USER_UID: "1000"
+        USER_GID: "1000"
+
+    volumes:
+      # Монтируем исходники проекта
+      - .:/workspace:cached
+      # ccache между пересборками
+      - focusforge-ccache:/home/vscode/.ccache
+      # Кеш CMake между пересборками
+      - focusforge-cmake-cache:/workspace/build
+
+    environment:
+      # Сервисы доступны по именам внутри docker-compose сети
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: focusforge
+      POSTGRES_USER: focusforge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret_pg_password}
+
+      MONGO_HOST: mongo
+      MONGO_PORT: "27017"
+      MONGO_USER: focusforge
+      MONGO_PASSWORD: ${MONGO_PASSWORD:-secret_mongo_password}
+
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-secret_redis_password}
+
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-dev_secret}
+
+      APP_ENV: local
+      LOG_LEVEL: debug
+      # ccache
+      CCACHE_DIR: /home/vscode/.ccache
+
+    # Контейнер живёт пока открыт VS Code
+    command: sleep infinity
+
+    # Нужны права для ptrace (GDB)
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+
+    networks:
+      - focusforge_net
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  focusforge-ccache:
+  focusforge-cmake-cache:

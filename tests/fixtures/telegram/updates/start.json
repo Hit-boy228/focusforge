@@ -1,0 +1,20 @@
+{
+  "update_id": 1000001,
+  "message": {
+    "message_id": 1,
+    "from": {
+      "id": 100001,
+      "is_bot": false,
+      "first_name": "Alice",
+      "username": "alice_test",
+      "language_code": "en"
+    },
+    "chat": {
+      "id": 100001,
+      "type": "private",
+      "username": "alice_test"
+    },
+    "text": "/start",
+    "date": 1700000000
+  }
+}

@@ -1,0 +1,38 @@
+# ==============================================================================
+# FocusForge — Config Vars Template
+#
+# Скопируйте этот файл:  cp configs/config_vars.example.yaml configs/config_vars.yaml
+# Затем заполните реальными значениями.
+# configs/config_vars.yaml добавлен в .gitignore — не коммитьте его.
+# ==============================================================================
+
+# ── Runtime ────────────────────────────────────────────────────────────────────
+worker_threads: 4
+io_threads: 4
+
+# ── Server ─────────────────────────────────────────────────────────────────────
+server_port: 8080
+monitor_port: 8085
+
+# ── Logging ────────────────────────────────────────────────────────────────────
+log_level: debug
+log_file: "@stderr"
+
+# ── Dynamic config cache ────────────────────────────────────────────────────────
+config_cache_path: /tmp/focusforge_config_cache
+
+# ── PostgreSQL ─────────────────────────────────────────────────────────────────
+pg_dsn: "postgresql://focusforge:YOUR_POSTGRES_PASSWORD@postgres:5432/focusforge?connect_timeout=5&application_name=focusforge"
+
+# ── MongoDB ────────────────────────────────────────────────────────────────────
+mongo_dsn: "mongodb://focusforge:YOUR_MONGO_PASSWORD@mongo:27017/focusforge?authSource=admin"
+
+# ── Redis ──────────────────────────────────────────────────────────────────────
+redis_secdist_alias: focusforge
+
+# ── Secdist ──────────────────────────────────────────────────────────────────
+secdist_path: configs/secdist.json
+
+# ── Telegram ───────────────────────────────────────────────────────────────────
+telegram_bot_token: "YOUR_TELEGRAM_BOT_TOKEN"
+telegram_webhook_secret: "YOUR_WEBHOOK_SECRET"

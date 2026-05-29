@@ -1,0 +1,23 @@
+# configs/environments/local.yaml
+# Запуск на хосте разработчика (нативно, без Docker).
+# Использование: focusforge -c configs/static_config.yaml --config_vars configs/environments/local.yaml
+
+worker_threads: 2
+io_threads: 2
+
+server_port: 8080
+monitor_port: 8085
+
+log_level: debug
+log_file: "@stderr"
+
+config_cache_path: /tmp/focusforge_config_cache_local
+
+pg_dsn: "postgresql://focusforge:secret_pg_password@localhost:5432/focusforge?connect_timeout=5&application_name=focusforge_local"
+mongo_dsn: "mongodb://focusforge:secret_mongo_password@localhost:27017/focusforge?authSource=admin"
+redis_secdist_alias: focusforge
+
+secdist_path: configs/secdist.json
+
+telegram_bot_token: ""
+telegram_webhook_secret: "dev_secret"

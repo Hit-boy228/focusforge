@@ -1,0 +1,85 @@
+# Build artifacts
+build/
+cmake-build*/
+cmake-build-*/
+*.o
+*.a
+*.so
+*.dylib
+
+# Binaries
+focusforge
+focusforge_tests
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+_deps/
+
+# Conan
+.conan/
+conan_provider.cmake
+conaninfo.txt
+conanbuildinfo.*
+conan_paths.cmake
+graph_info.json
+
+# Environment & secrets — NEVER commit these
+.env
+*.env.local
+secrets.json
+configs/config_vars.yaml
+configs/secdist.json
+
+# IDE
+.idea/
+.vscode/
+*.user
+*.suo
+.vs/
+*.VC.db
+*.VC.opendb
+*.orig
+
+# clangd
+compile_commands.json
+.clangd/
+
+# Logs
+*.log
+logs/
+
+# Temp / cache
+tmp/
+/tmp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# Docker volumes (local)
+postgres_data/
+mongo_data/
+redis_data/
+
+# Python (для тестов)
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Dev Container
+.devcontainer/.env.devcontainer.local
+test-results/
+compile_commands.json
+*.db
+.claude/

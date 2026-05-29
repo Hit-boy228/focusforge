@@ -1,0 +1,19 @@
+{
+  "update_id": 1000003,
+  "message": {
+    "message_id": 3,
+    "from": {
+      "id": 100001,
+      "is_bot": false,
+      "first_name": "Alice",
+      "username": "alice_test",
+      "language_code": "en"
+    },
+    "chat": {
+      "id": 100001,
+      "type": "private"
+    },
+    "text": "/focus 25m",
+    "date": 1700000200
+  }
+}

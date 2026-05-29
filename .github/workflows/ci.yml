@@ -1,0 +1,132 @@
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ── Format check ──────────────────────────────────────────────────────────────
+  format:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format-17
+      - name: Check formatting
+        run: ./scripts/format.sh --check
+
+  # ── Build & Unit tests ────────────────────────────────────────────────────────
+  build-and-test:
+    runs-on: ubuntu-22.04
+    container:
+      image: ghcr.io/userver-framework/ubuntu-22.04-userver-base:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Conan
+        run: pip install conan==2.0.17
+
+      - name: Configure (CMake + Conan)
+        run: |
+          mkdir build && cd build
+          conan install .. --build=missing -s build_type=Release
+          cmake .. -DCMAKE_BUILD_TYPE=Release \
+                   -DBUILD_TESTS=ON \
+                   -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Run unit tests
+        run: ./scripts/test_unit.sh
+        env:
+          BUILD_DIR: build
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: test_results_unit.xml
+
+  # ── Lint (clang-tidy) ─────────────────────────────────────────────────────────
+  lint:
+    runs-on: ubuntu-22.04
+    needs: build-and-test
+    container:
+      image: ghcr.io/userver-framework/ubuntu-22.04-userver-base:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run clang-tidy
+        run: |
+          mkdir -p build
+          cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          ./scripts/lint.sh
+        env:
+          BUILD_DIR: build
+
+  # ── Integration tests ─────────────────────────────────────────────────────────
+  integration:
+    runs-on: ubuntu-22.04
+    needs: build-and-test
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER:     focusforge
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB:       focusforge
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-retries 5
+      mongo:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: focusforge
+          MONGO_INITDB_ROOT_PASSWORD: ci_password
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply migrations
+        run: ./scripts/apply_migrations.sh
+        env:
+          POSTGRES_HOST:     localhost
+          POSTGRES_USER:     focusforge
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB:       focusforge
+          MONGO_HOST:        localhost
+          MONGO_USER:        focusforge
+          MONGO_PASSWORD:    ci_password
+          REDIS_HOST:        localhost
+      - name: Run integration tests
+        run: ./scripts/test_integration.sh
+        env:
+          POSTGRES_HOST:     localhost
+          POSTGRES_PASSWORD: ci_password
+          MONGO_HOST:        localhost
+          MONGO_PASSWORD:    ci_password
+          REDIS_HOST:        localhost
+          ENABLE_INTEGRATION_TESTS: "1"
+
+  # ── Docker build validation ───────────────────────────────────────────────────
+  docker:
+    runs-on: ubuntu-22.04
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t focusforge:ci .
+      - name: Validate image starts
+        run: |
+          docker run --rm --entrypoint /bin/sh focusforge:ci \
+              -c "ls /app/focusforge && echo 'Binary OK'"

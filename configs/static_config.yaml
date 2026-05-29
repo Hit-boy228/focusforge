@@ -1,0 +1,218 @@
+# ==============================================================================
+# FocusForge — userver static configuration
+#
+# Все изменяемые значения вынесены в config_vars.yaml (для dev) и
+# configs/environments/*.yaml (для prod/staging).
+# Здесь только структура — никаких хардкод-значений и секретов.
+# ==============================================================================
+
+components_manager:
+  coro_pool:
+    initial_size: 500
+    max_size: 5000
+
+  default_task_processor: main-task-processor
+
+  task_processors:
+    main-task-processor:
+      thread_name: main-worker
+      worker_threads: $worker_threads
+    io-task-processor:
+      thread_name: io-worker
+      worker_threads: $io_threads
+    fs-task-processor:
+      thread_name: fs-worker
+      worker_threads: 2
+
+  components:
+    # ── USERVER INFRASTRUCTURE ─────────────────────────────────────────────────
+
+    server:
+      listener:
+        port: $server_port
+        task_processor: main-task-processor
+      listener-monitor:
+        port: $monitor_port
+        task_processor: main-task-processor
+      max_response_size_in_flight: 67108864
+
+    logging:
+      fs-task-processor: fs-task-processor
+      loggers:
+        default:
+          file_path: $log_file
+          level: $log_level
+          overflow_behavior: discard
+          format: json
+
+    statistics-storage: {}
+
+    # Секреты читаются из $secdist_path (JSON-файл, генерируется из env при старте)
+    secdist:
+      provider: default-secdist-provider
+
+    default-secdist-provider:
+      config: $secdist_path
+
+    dynamic-config:
+      fs-cache-path: $config_cache_path
+      fs-task-processor: fs-task-processor
+      defaults:
+        USERVER_LOG_REQUEST: true
+        USERVER_LOG_REQUEST_HEADERS: false
+        USERVER_CHECK_AUTH_IN_HANDLERS: false
+        USERVER_HTTP_PROXY: ""
+        USERVER_TASK_PROCESSOR_PROFILER_DEBUG: {}
+
+    # ── EXTERNAL CLIENTS ───────────────────────────────────────────────────────
+
+    dns-client:
+      fs-task-processor: fs-task-processor
+
+    http-client: {}
+    http-client-core:
+      load-enabled: true
+    http-client-middleware-pipeline:
+      load-enabled: true
+
+    # ── DATABASES ──────────────────────────────────────────────────────────────
+
+    testsuite-support:
+      load-enabled: true
+
+    postgres-focusforge:
+      dbconnection: $pg_dsn
+      blocking_task_processor: fs-task-processor
+      max_replication_lag: 60s
+      min_pool_size: 1
+      max_pool_size: 10
+      max_queue_size: 200
+      sync-start: true
+      connlimit_mode: manual
+
+    mongo-focusforge:
+      dbconnection: $mongo_dsn
+      conn_timeout: 2s
+      so_timeout: 10s
+      queue_timeout: 1s
+      stats_verbosity: terse
+      initial_size: 3
+      max_size: 20
+
+    redis-focusforge:
+      groups:
+        - config_name: $redis_secdist_alias
+          db: focusforge
+      subscribe_groups: []
+      thread_pools:
+        redis_thread_pool_size: 4
+        sentinel_thread_pool_size: 1
+
+    # ── REPOSITORIES — POSTGRESQL ──────────────────────────────────────────────
+
+    user-repository: {}
+    task-repository: {}
+    subtask-repository: {}
+    session-repository: {}
+    reminder-repository: {}
+    goal-repository: {}
+    activity-repository: {}
+    idempotency-repository: {}
+
+    # ── REPOSITORIES — REDIS ──────────────────────────────────────────────────
+
+    lock-repository: {}
+    rate-limit-repository: {}
+    conversation-state-repository: {}
+    cache-repository: {}
+
+    # ── REPOSITORIES — MONGODB ────────────────────────────────────────────────
+
+    preferences-repository: {}
+    event-log-repository: {}
+    report-snapshot-repository: {}
+
+    # ── SERVICES ──────────────────────────────────────────────────────────────
+
+    idempotency-service: {}
+    user-service: {}
+    streak-service: {}
+    task-service: {}
+    focus-service: {}
+    reminder-service: {}
+    planner-service: {}
+    analytics-service: {}
+    conversation-service: {}
+    notification-service: {}
+
+    # ── TELEGRAM ──────────────────────────────────────────────────────────────
+
+    scene-start: {}
+    scene-create-task: {}
+    scene-edit-task: {}
+    scene-focus: {}
+    scene-reminder: {}
+    scene-review: {}
+    callback-router: {}
+    telegram-router: {}
+
+    # ── OBSERVABILITY ─────────────────────────────────────────────────────────
+
+    metrics-collector: {}
+
+    handler-server-monitor:
+      path: /metrics
+      method: GET
+      task_processor: fs-task-processor
+      format: prometheus-untyped
+      monitor-handler: true
+
+    # ── HTTP HANDLERS ─────────────────────────────────────────────────────────
+
+    handler-health:
+      path: /health/live
+      method: GET
+      task_processor: main-task-processor
+
+    handler-health-ready:
+      path: /health/ready
+      method: GET
+      task_processor: main-task-processor
+
+    handler-telegram-webhook:
+      path: /webhook/{bot_token}
+      method: POST
+      task_processor: main-task-processor
+      max_request_size: 5242880
+      webhook_secret: $telegram_webhook_secret
+      bot_token: $telegram_bot_token
+
+    handler-tasks:
+      path: /api/v1/tasks
+      method: GET,POST,PATCH,DELETE
+      task_processor: main-task-processor
+
+    handler-focus:
+      path: /api/v1/sessions
+      method: GET,POST,PATCH
+      task_processor: main-task-processor
+
+    handler-users:
+      path: /api/v1/users/{user_id}
+      method: GET,PATCH
+      task_processor: main-task-processor
+
+    handler-reminders:
+      path: /api/v1/reminders
+      method: GET,POST,DELETE
+      task_processor: main-task-processor
+
+    handler-reports:
+      path: /api/v1/reports/{type}
+      method: GET
+      task_processor: main-task-processor
+
+    handler-admin:
+      path: /api/v1/admin/{action}
+      method: POST
+      task_processor: main-task-processor

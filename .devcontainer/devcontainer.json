@@ -1,0 +1,163 @@
+// ==============================================================================
+// FocusForge — Dev Container Configuration
+// https://containers.dev/implementors/json_reference/
+// ==============================================================================
+{
+    "name": "FocusForge Dev",
+
+    // Используем docker-compose: поднимает postgres/mongo/redis + dev-контейнер
+    "dockerComposeFile": [
+        "../docker-compose.yml",
+        "docker-compose.devcontainer.yml"
+    ],
+    "service": "focusforge-dev",
+    "workspaceFolder": "/workspace",
+
+    // ── Проброс портов ────────────────────────────────────────────────────────
+    "forwardPorts": [
+        8080,    // App HTTP
+        5432,    // PostgreSQL (через сеть, не через host)
+        6379,    // Redis
+        27017    // MongoDB
+    ],
+    "portsAttributes": {
+        "8080": { "label": "FocusForge App",  "onAutoForward": "notify" },
+        "5432": { "label": "PostgreSQL",       "onAutoForward": "silent" },
+        "6379": { "label": "Redis",            "onAutoForward": "silent" },
+        "27017":{ "label": "MongoDB",          "onAutoForward": "silent" }
+    },
+
+    // ── Команды жизненного цикла ──────────────────────────────────────────────
+    // Выполняется ОДИН РАЗ при первом создании контейнера
+    "onCreateCommand": "bash .devcontainer/post-create.sh",
+
+    // Выполняется при каждом запуске контейнера
+    "postStartCommand": "bash .devcontainer/post-start.sh",
+
+    // ── VS Code настройки ─────────────────────────────────────────────────────
+    "customizations": {
+        "vscode": {
+
+            // Расширения, устанавливаемые автоматически
+            "extensions": [
+                // C++ / Build
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-extension-pack",
+                "ms-vscode.cmake-tools",
+                "twxs.cmake",
+                // Лучший C++ IntelliSense (clangd)
+                "llvm-vs-code-extensions.vscode-clangd",
+                // Форматирование
+                "xaver.clang-format",
+                // Отладка
+                "vadimcn.vscode-lldb",
+                // Docker
+                "ms-azuretools.vscode-docker",
+                // Git
+                "eamodio.gitlens",
+                // БД
+                "mtxr.sqltools",
+                "mtxr.sqltools-driver-pg",
+                // YAML
+                "redhat.vscode-yaml",
+                // Общее
+                "EditorConfig.EditorConfig",
+                "streetsidesoftware.code-spell-checker",
+                "usernamehw.errorlens",
+                "cschlosser.doxdocgen",
+                "ms-python.python"
+            ],
+
+            // Настройки VS Code
+            "settings": {
+                // ── Редактор ──────────────────────────────────────────────────
+                "editor.formatOnSave": true,
+                "editor.formatOnType": false,
+                "editor.rulers": [100],
+                "editor.tabSize": 4,
+                "editor.detectIndentation": false,
+
+                // ── C++ / clangd (предпочитаем над ms-vscode.cpptools) ────────
+                "C_Cpp.intelliSenseEngine": "disabled",
+                "clangd.path": "/usr/bin/clangd-17",
+                "clangd.arguments": [
+                    "--compile-commands-dir=/workspace/build",
+                    "--background-index",
+                    "--clang-tidy",
+                    "--header-insertion=iwyu",
+                    "--completion-style=detailed",
+                    "--function-arg-placeholders=false",
+                    "-j=4"
+                ],
+                "clangd.fallbackFlags": ["-std=c++17"],
+
+                // ── clang-format ──────────────────────────────────────────────
+                "[cpp]": {
+                    "editor.defaultFormatter": "xaver.clang-format"
+                },
+                "[c]": {
+                    "editor.defaultFormatter": "xaver.clang-format"
+                },
+                "clang-format.executable": "/usr/bin/clang-format-17",
+
+                // ── CMake ─────────────────────────────────────────────────────
+                "cmake.buildDirectory": "${workspaceFolder}/build",
+                "cmake.generator": "Ninja",
+                "cmake.configureSettings": {
+                    "CMAKE_BUILD_TYPE": "Debug",
+                    "BUILD_TESTS": "ON",
+                    "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+                },
+                "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
+
+                // ── LLDB отладка ──────────────────────────────────────────────
+                "lldb.library": "/usr/lib/x86_64-linux-gnu/liblldb-17.so.1",
+                "lldb.launch.sourceLanguages": ["c++"],
+
+                // ── Python ───────────────────────────────────────────────────
+                "python.defaultInterpreterPath": "/usr/bin/python3",
+                "python.testing.pytestEnabled": true,
+                "python.testing.pytestArgs": ["tests"],
+
+                // ── Файловые ассоциации ───────────────────────────────────────
+                "files.associations": {
+                    "*.hpp": "cpp",
+                    "*.cpp": "cpp"
+                },
+                "files.exclude": {
+                    "build/":       true,
+                    "build-debug/": true,
+                    ".ccache/":     true
+                },
+
+                // ── SQLTools — подключение к PostgreSQL ───────────────────────
+                "sqltools.connections": [{
+                    "name":     "FocusForge Postgres",
+                    "driver":   "PostgreSQL",
+                    "server":   "postgres",
+                    "port":     5432,
+                    "database": "focusforge",
+                    "username": "focusforge",
+                    "password": "secret_pg_password"
+                }],
+
+                // ── Git ───────────────────────────────────────────────────────
+                "git.enableSmartCommit": true,
+                "git.autofetch": true
+            }
+        }
+    },
+
+    // ── Remote пользователь ───────────────────────────────────────────────────
+    "remoteUser": "vscode",
+
+    // ── Переменные окружения в VS Code ────────────────────────────────────────
+    "remoteEnv": {
+        "POSTGRES_HOST":     "postgres",
+        "REDIS_HOST":        "redis",
+        "MONGO_HOST":        "mongo",
+        "APP_ENV":           "local",
+        "LOG_LEVEL":         "debug",
+        "CCACHE_DIR":        "/home/vscode/.ccache"
+    }
+}

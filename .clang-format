@@ -1,0 +1,56 @@
+---
+Language:        Cpp
+BasedOnStyle:    Google
+Standard:        c++17
+
+# Indentation
+IndentWidth:     4
+TabWidth:        4
+UseTab:          Never
+ColumnLimit:     100
+
+# Braces
+BreakBeforeBraces:       Attach
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+
+# Includes
+IncludeBlocks:   Regroup
+IncludeCategories:
+  # Own header first (no prefix)
+  - Regex:           '^"'
+    Priority:        1
+  # userver
+  - Regex:           '^<userver/'
+    Priority:        2
+  # System / STL
+  - Regex:           '^<'
+    Priority:        3
+
+# Alignment
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignTrailingComments: true
+
+# Pointers / references
+PointerAlignment:  Left
+ReferenceAlignment: Left
+
+# Spacing
+SpaceAfterCStyleCast: false
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+
+# Misc
+SortIncludes:             CaseSensitive
+ReflowComments:           true
+FixNamespaceComments:     true
+NamespaceIndentation:     None
+MaxEmptyLinesToKeep:      2
+
+# Constructor initializer list
+BreakConstructorInitializers:   BeforeComma
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4

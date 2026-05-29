@@ -1,0 +1,39 @@
+# Secrets — never bake into Docker image
+.env
+*.env.local
+configs/config_vars.yaml
+configs/secdist.json
+
+# Build artefacts
+build/
+cmake-build*/
+*.o *.a *.so *.dylib
+CMakeCache.txt CMakeFiles/
+compile_commands.json
+
+# Conan
+.conan/
+graph_info.json
+
+# Tests & CI
+tests/
+test-results/
+.pytest_cache/
+.github/
+
+# Dev tooling
+.claude/
+.devcontainer/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs & temp
+*.log
+logs/
+tmp/
+*.tmp *.swp *~
+
+# Git
+.git/

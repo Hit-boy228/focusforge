@@ -1,0 +1,19 @@
+#include "focus_handler.hpp"
+#include <userver/components/component_context.hpp>
+#include <userver/formats/json/value_builder.hpp>
+#include <userver/formats/json/serialize.hpp>
+
+namespace focusforge::handlers {
+
+std::string FocusHandler::HandleRequestThrow(
+    const userver::server::http::HttpRequest& req,
+    userver::server::request::RequestContext&) const {
+    auto& response = req.GetHttpResponse();
+    response.SetHeader(std::string{"Content-Type"}, std::string{"application/json"});
+    userver::formats::json::ValueBuilder b;
+    b["ok"]      = true;
+    b["handler"] = std::string{"focus"};
+    return userver::formats::json::ToString(b.ExtractValue());
+}
+
+}  // namespace focusforge::handlers

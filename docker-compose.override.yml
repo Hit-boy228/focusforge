@@ -1,0 +1,58 @@
+version: "3.9"
+
+# ==============================================================================
+# docker-compose.override.yml — локальные переопределения для разработки
+# Этот файл НЕ коммитится в production (добавлен в .gitignore для production env)
+# ==============================================================================
+
+services:
+  focusforge:
+    build:
+      args:
+        BUILD_TYPE: Release
+    environment:
+      LOG_LEVEL: debug
+      APP_ENV: local
+    volumes:
+      # Монтируем исходники для быстрой перекомпиляции
+      - ./src:/build/src:ro
+      - ./tests:/build/tests:ro
+      - ./configs:/app/configs:ro
+    ports:
+      - "8080:8080"
+      - "8081:8081"   # debug port
+
+  postgres:
+    ports:
+      - "5432:5432"    # Открываем для локального подключения через psql/DBeaver
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  mongo:
+    ports:
+      - "27017:27017"  # Открываем для подключения через MongoDB Compass
+    volumes:
+      - mongo_data:/data/db
+      - ./docker/mongo/init.js:/docker-entrypoint-initdb.d/init.js:ro
+
+  redis:
+    ports:
+      - "6379:6379"    # Открываем для redis-cli
+
+  nginx:
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+
+  # Adminer для PostgreSQL (только local)
+  adminer:
+    image: adminer:4.8.1
+    restart: unless-stopped
+    ports:
+      - "8888:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    networks:
+      - focusforge_net
+    depends_on:
+      - postgres
