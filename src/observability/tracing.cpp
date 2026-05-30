@@ -2,8 +2,7 @@
 
 namespace focusforge::observability {
 
-OperationSpan::OperationSpan(const std::string& name)
-    : span_(name) {}
+OperationSpan::OperationSpan(const std::string& name) : span_(name) {}
 
 void OperationSpan::SetUserId(const std::string& user_id) {
     span_.AddTag("user_id", user_id);

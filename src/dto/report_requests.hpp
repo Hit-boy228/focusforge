@@ -27,7 +27,7 @@ struct CreateReminderRequest {
     std::string message;
     std::string remind_at_iso;
     std::optional<std::string> task_id;
-    bool        is_recurring = false;
+    bool is_recurring = false;
     std::optional<std::string> recurrence_rule;
 };
 

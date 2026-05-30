@@ -1,31 +1,31 @@
 #pragma once
 // src/services/focus_service.hpp
 
-#include <optional>
+#include "core/errors.hpp"
+#include "domain/focus_session.hpp"
+#include "domain/user.hpp"
+#include "dto/focus_requests.hpp"
 
 #include <userver/components/component_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 
-#include "domain/focus_session.hpp"
-#include "domain/user.hpp"
-#include "dto/focus_requests.hpp"
-#include "core/errors.hpp"
+#include <optional>
 
 // Forward declarations
 namespace focusforge::repositories::postgres {
 class SessionRepository;
 class ActivityRepository;
 class GoalRepository;
-}
+}  // namespace focusforge::repositories::postgres
 namespace focusforge::repositories::redis {
 class LockRepository;
 class CacheRepository;
-}
+}  // namespace focusforge::repositories::redis
 
 namespace focusforge::services {
 
 class FocusService final : public userver::components::ComponentBase {
-public:
+   public:
     static constexpr std::string_view kName = "focus-service";
 
     FocusService(const userver::components::ComponentConfig& cfg,
@@ -55,12 +55,12 @@ public:
     /// Обновить actual_duration (вызывается шедулером)
     void TickActiveSession(const std::string& user_id);
 
-private:
-    repositories::postgres::SessionRepository&  session_repo_;
-    repositories::redis::LockRepository&        lock_repo_;
-    repositories::redis::CacheRepository&       cache_;
+   private:
+    repositories::postgres::SessionRepository& session_repo_;
+    repositories::redis::LockRepository& lock_repo_;
+    repositories::redis::CacheRepository& cache_;
     repositories::postgres::ActivityRepository& activity_repo_;
-    repositories::postgres::GoalRepository&     goal_repo_;
+    repositories::postgres::GoalRepository& goal_repo_;
 };
 
 }  // namespace focusforge::services

@@ -1,15 +1,16 @@
 #pragma once
 // src/observability/metrics.hpp
-#include <chrono>
-#include <string>
 #include <userver/components/component_base.hpp>
 #include <userver/utils/statistics/storage.hpp>
 #include <userver/utils/statistics/writer.hpp>
 
+#include <chrono>
+#include <string>
+
 namespace focusforge::observability {
 
 class MetricsCollector final : public userver::components::ComponentBase {
-public:
+   public:
     static constexpr std::string_view kName = "metrics-collector";
     MetricsCollector(const userver::components::ComponentConfig& cfg,
                      const userver::components::ComponentContext& ctx);
@@ -28,7 +29,7 @@ public:
 
     void WriteStatistics(userver::utils::statistics::Writer& writer) const;
 
-private:
+   private:
     std::atomic<int64_t> tasks_created_{0};
     std::atomic<int64_t> tasks_completed_{0};
     std::atomic<int64_t> sessions_started_{0};

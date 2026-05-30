@@ -5,7 +5,7 @@
 namespace focusforge::dto {
 
 struct FlushCacheRequest {
-    std::string pattern;   // e.g. "user:profile:*"
+    std::string pattern;  // e.g. "user:profile:*"
 };
 
 struct ResendReminderRequest {

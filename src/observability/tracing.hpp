@@ -1,13 +1,14 @@
 #pragma once
 // src/observability/tracing.hpp
-#include <string>
 #include <userver/tracing/span.hpp>
+
+#include <string>
 
 namespace focusforge::observability {
 
 /// RAII-обёртка для трассировки операции с бизнес-тегами
 class OperationSpan {
-public:
+   public:
     explicit OperationSpan(const std::string& name);
     void SetUserId(const std::string& user_id);
     void SetTaskId(const std::string& task_id);
@@ -15,7 +16,7 @@ public:
     void SetError(const std::string& error);
     ~OperationSpan() = default;
 
-private:
+   private:
     userver::tracing::Span span_;
 };
 

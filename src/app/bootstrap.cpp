@@ -1,10 +1,10 @@
 #include "bootstrap.hpp"
 
-#include <fstream>
-#include <stdexcept>
-
 #include <userver/formats/json/serialize.hpp>
 #include <userver/logging/log.hpp>
+
+#include <fstream>
+#include <stdexcept>
 
 namespace focusforge::app {
 
@@ -16,8 +16,7 @@ void LoadSecrets(const std::string& secrets_path) {
         return;
     }
 
-    std::string content((std::istreambuf_iterator<char>(f)),
-                         std::istreambuf_iterator<char>());
+    std::string content((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
 
     try {
         auto j = userver::formats::json::FromString(content);

@@ -1,10 +1,11 @@
 #pragma once
 // src/repositories/mongo/event_log_repository.hpp
+#include <userver/components/component_base.hpp>
+#include <userver/formats/json/value.hpp>
+#include <userver/storages/mongo/component.hpp>
+
 #include <string>
 #include <vector>
-#include <userver/components/component_base.hpp>
-#include <userver/storages/mongo/component.hpp>
-#include <userver/formats/json/value.hpp>
 
 namespace focusforge::repositories::mongo {
 
@@ -15,7 +16,7 @@ struct EventLogEntry {
 };
 
 class EventLogRepository final : public userver::components::ComponentBase {
-public:
+   public:
     static constexpr std::string_view kName = "event-log-repository";
     EventLogRepository(const userver::components::ComponentConfig& cfg,
                        const userver::components::ComponentContext& ctx);
@@ -23,7 +24,7 @@ public:
     void Insert(const EventLogEntry& entry);
     std::vector<EventLogEntry> FindByUser(const std::string& user_id, int limit = 50);
 
-private:
+   private:
     userver::storages::mongo::PoolPtr mongo_;
 };
 

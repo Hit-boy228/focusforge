@@ -3,10 +3,10 @@
 // Точка входа приложения.
 // =============================================================================
 
+#include "app/component_list.hpp"
+
 #include <userver/components/minimal_server_component_list.hpp>
 #include <userver/utils/daemon_run.hpp>
-
-#include "app/component_list.hpp"
 
 int main(int argc, char* argv[]) {
     // Формируем список компонентов: минимальный server stack + наши компоненты

@@ -11,11 +11,15 @@
 namespace focusforge::core {
 
 struct PageRequest {
-    int limit  = 20;
+    int limit = 20;
     int offset = 0;
 
-    int Limit()  const { return std::clamp(limit, 1, 100); }
-    int Offset() const { return std::max(0, offset); }
+    int Limit() const {
+        return std::clamp(limit, 1, 100);
+    }
+    int Offset() const {
+        return std::max(0, offset);
+    }
 };
 
 template <typename T>
@@ -29,7 +33,9 @@ struct Page {
         return (offset + static_cast<int>(items.size())) < total;
     }
 
-    bool IsEmpty() const { return items.empty(); }
+    bool IsEmpty() const {
+        return items.empty();
+    }
 };
 
 }  // namespace focusforge::core

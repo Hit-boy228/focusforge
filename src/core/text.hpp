@@ -3,26 +3,26 @@
 
 #include <algorithm>
 #include <cctype>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <optional>
 
 namespace focusforge::core {
 
 /// Trim пробелов с обоих концов
 inline std::string Trim(std::string s) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(),
-        [](unsigned char c){ return !std::isspace(c); }));
-    s.erase(std::find_if(s.rbegin(), s.rend(),
-        [](unsigned char c){ return !std::isspace(c); }).base(), s.end());
+    s.erase(s.begin(),
+            std::find_if(s.begin(), s.end(), [](unsigned char c) { return !std::isspace(c); }));
+    s.erase(
+        std::find_if(s.rbegin(), s.rend(), [](unsigned char c) { return !std::isspace(c); }).base(),
+        s.end());
     return s;
 }
 
 /// Перевести строку в нижний регистр
 inline std::string ToLower(std::string s) {
-    std::transform(s.begin(), s.end(), s.begin(),
-        [](unsigned char c){ return std::tolower(c); });
+    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
     return s;
 }
 
@@ -33,7 +33,8 @@ inline std::vector<std::string> Split(const std::string& s, char delim) {
     std::string token;
     while (std::getline(ss, token, delim)) {
         auto t = Trim(token);
-        if (!t.empty()) tokens.push_back(std::move(t));
+        if (!t.empty())
+            tokens.push_back(std::move(t));
     }
     return tokens;
 }
@@ -44,11 +45,20 @@ inline std::string EscapeHtml(std::string s) {
     result.reserve(s.size() * 1.1);
     for (char c : s) {
         switch (c) {
-            case '&': result += "&amp;";  break;
-            case '<': result += "&lt;";   break;
-            case '>': result += "&gt;";   break;
-            case '"': result += "&quot;"; break;
-            default:  result += c;
+            case '&':
+                result += "&amp;";
+                break;
+            case '<':
+                result += "&lt;";
+                break;
+            case '>':
+                result += "&gt;";
+                break;
+            case '"':
+                result += "&quot;";
+                break;
+            default:
+                result += c;
         }
     }
     return result;
@@ -56,7 +66,8 @@ inline std::string EscapeHtml(std::string s) {
 
 /// Обрезает строку до maxLen символов, добавляя "..." если длиннее
 inline std::string Truncate(const std::string& s, size_t max_len) {
-    if (s.size() <= max_len) return s;
+    if (s.size() <= max_len)
+        return s;
     return s.substr(0, max_len - 3) + "...";
 }
 

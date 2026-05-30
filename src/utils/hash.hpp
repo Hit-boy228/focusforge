@@ -1,7 +1,7 @@
 #pragma once
 // src/utils/hash.hpp
-#include <string>
 #include <functional>
+#include <string>
 
 namespace focusforge::utils {
 
@@ -14,8 +14,7 @@ inline std::string HashString(const std::string& s) {
 }
 
 /// Idempotency key из Telegram update_id + operation
-inline std::string MakeIdempotencyKey(int64_t update_id,
-                                       const std::string& operation) {
+inline std::string MakeIdempotencyKey(int64_t update_id, const std::string& operation) {
     return "tg:" + std::to_string(update_id) + ":" + operation;
 }
 

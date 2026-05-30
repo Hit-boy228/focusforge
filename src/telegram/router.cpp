@@ -1,47 +1,48 @@
 #include "router.hpp"
-#include <userver/components/component_context.hpp>
-#include "scenes/start_scene.hpp"
+
+#include "callback_router.hpp"
+#include "core/text.hpp"
+#include "core/time.hpp"
+#include "domain/enums.hpp"
+#include "dto/report_requests.hpp"
+#include "dto/task_requests.hpp"
 #include "scenes/create_task_scene.hpp"
 #include "scenes/focus_scene.hpp"
 #include "scenes/reminder_scene.hpp"
 #include "scenes/review_scene.hpp"
-#include "callback_router.hpp"
-#include "services/conversation_service.hpp"
-#include "services/user_service.hpp"
-#include "services/notification_service.hpp"
-#include "services/task_service.hpp"
+#include "scenes/start_scene.hpp"
 #include "services/analytics_service.hpp"
-#include "services/streak_service.hpp"
-#include "services/reminder_service.hpp"
+#include "services/conversation_service.hpp"
+#include "services/notification_service.hpp"
 #include "services/planner_service.hpp"
+#include "services/reminder_service.hpp"
+#include "services/streak_service.hpp"
+#include "services/task_service.hpp"
+#include "services/user_service.hpp"
 #include "telegram/messages/templates.hpp"
-#include "domain/enums.hpp"
-#include "dto/task_requests.hpp"
-#include "dto/report_requests.hpp"
-#include "core/text.hpp"
-#include "core/time.hpp"
+
+#include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
 
 namespace focusforge::telegram {
 
-Router::Router(
-    const userver::components::ComponentConfig& cfg,
-    const userver::components::ComponentContext& ctx)
-    : ComponentBase(cfg, ctx),
-      start_scene_(ctx.FindComponent<scenes::StartScene>()),
-      create_task_scene_(ctx.FindComponent<scenes::CreateTaskScene>()),
-      focus_scene_(ctx.FindComponent<scenes::FocusScene>()),
-      reminder_scene_(ctx.FindComponent<scenes::ReminderScene>()),
-      review_scene_(ctx.FindComponent<scenes::ReviewScene>()),
-      conv_service_(ctx.FindComponent<services::ConversationService>()),
-      user_service_(ctx.FindComponent<services::UserService>()),
-      notify_(ctx.FindComponent<services::NotificationService>()),
-      task_service_(ctx.FindComponent<services::TaskService>()),
-      analytics_service_(ctx.FindComponent<services::AnalyticsService>()),
-      streak_service_(ctx.FindComponent<services::StreakService>()),
-      reminder_service_(ctx.FindComponent<services::ReminderService>()),
-      planner_service_(ctx.FindComponent<services::PlannerService>()),
-      callback_router_(ctx.FindComponent<CallbackRouter>()) {}
+Router::Router(const userver::components::ComponentConfig& cfg,
+               const userver::components::ComponentContext& ctx)
+    : ComponentBase(cfg, ctx)
+    , start_scene_(ctx.FindComponent<scenes::StartScene>())
+    , create_task_scene_(ctx.FindComponent<scenes::CreateTaskScene>())
+    , focus_scene_(ctx.FindComponent<scenes::FocusScene>())
+    , reminder_scene_(ctx.FindComponent<scenes::ReminderScene>())
+    , review_scene_(ctx.FindComponent<scenes::ReviewScene>())
+    , conv_service_(ctx.FindComponent<services::ConversationService>())
+    , user_service_(ctx.FindComponent<services::UserService>())
+    , notify_(ctx.FindComponent<services::NotificationService>())
+    , task_service_(ctx.FindComponent<services::TaskService>())
+    , analytics_service_(ctx.FindComponent<services::AnalyticsService>())
+    , streak_service_(ctx.FindComponent<services::StreakService>())
+    , reminder_service_(ctx.FindComponent<services::ReminderService>())
+    , planner_service_(ctx.FindComponent<services::PlannerService>())
+    , callback_router_(ctx.FindComponent<CallbackRouter>()) {}
 
 void Router::Route(const dto::TgUpdate& update) {
     if (update.HasMessage()) {
@@ -64,29 +65,36 @@ void Router::HandleMessage(const dto::TgMessage& msg) {
     }
 }
 
-void Router::HandleCommand(const dto::TgMessage& msg,
-                             const std::string& cmd,
-                             const std::string& /*args*/) {
+void Router::HandleCommand(const dto::TgMessage& msg, const std::string& cmd,
+                           const std::string& /*args*/) {
     const int64_t tg_id = msg.from.id;
     LOG_DEBUG() << "Command: /" << cmd << " from " << tg_id;
 
     // ── Онбординг ──────────────────────────────────────────────────────────────
-    if (cmd == "start") { start_scene_.Handle(msg); return; }
+    if (cmd == "start") {
+        start_scene_.Handle(msg);
+        return;
+    }
 
     // ── Создание задачи ────────────────────────────────────────────────────────
-    if (cmd == "task" || cmd == "newtask") { create_task_scene_.Start(msg); return; }
+    if (cmd == "task" || cmd == "newtask") {
+        create_task_scene_.Start(msg);
+        return;
+    }
 
     // ── Список задач ───────────────────────────────────────────────────────────
     if (cmd == "tasks") {
         auto user_opt = user_service_.GetByTelegramId(tg_id);
-        if (!user_opt) { notify_.SendMessage(msg.chat.id, messages::kErrorGeneral); return; }
+        if (!user_opt) {
+            notify_.SendMessage(msg.chat.id, messages::kErrorGeneral);
+            return;
+        }
         dto::TaskFilterRequest f;
         f.user_id = user_opt->id;
-        f.limit   = 10;
+        f.limit = 10;
         auto [tasks, total] = task_service_.ListTasks(f);
         if (tasks.empty()) {
-            notify_.SendMessage(msg.chat.id,
-                "📋 <b>Задач нет</b>\n\nСоздай первую командой /task");
+            notify_.SendMessage(msg.chat.id, "📋 <b>Задач нет</b>\n\nСоздай первую командой /task");
             return;
         }
         std::string text = "📋 <b>Мои задачи</b> (" + std::to_string(total) + ")\n\n";
@@ -96,11 +104,13 @@ void Router::HandleCommand(const dto::TgMessage& msg,
             text += "<b>" + core::EscapeHtml(core::Truncate(t.title, 40)) + "</b>";
             if (t.deadline) {
                 text += "  📅 " + core::FormatDate(*t.deadline);
-                if (t.IsOverdue()) text += " ⚠️";
+                if (t.IsOverdue())
+                    text += " ⚠️";
             }
             if (!t.tags.empty()) {
                 text += "\n    ";
-                for (const auto& tag : t.tags) text += "#" + tag.name + " ";
+                for (const auto& tag : t.tags)
+                    text += "#" + tag.name + " ";
             }
             text += "\n";
         }
@@ -114,12 +124,15 @@ void Router::HandleCommand(const dto::TgMessage& msg,
     // ── План на сегодня ────────────────────────────────────────────────────────
     if (cmd == "today" || cmd == "plan") {
         auto user_opt = user_service_.GetByTelegramId(tg_id);
-        if (!user_opt) { notify_.SendMessage(msg.chat.id, messages::kErrorGeneral); return; }
+        if (!user_opt) {
+            notify_.SendMessage(msg.chat.id, messages::kErrorGeneral);
+            return;
+        }
         const auto today = core::FormatDate(core::NowUtc());
         auto plan = planner_service_.BuildDayPlan(user_opt->id, today);
         if (plan.ordered_tasks.empty()) {
             notify_.SendMessage(msg.chat.id,
-                "📅 <b>Сегодня свободно!</b>\n\nДобавь задачи командой /task");
+                                "📅 <b>Сегодня свободно!</b>\n\nДобавь задачи командой /task");
             return;
         }
         std::string text = "📅 <b>План на " + today + "</b>\n\n";
@@ -134,36 +147,48 @@ void Router::HandleCommand(const dto::TgMessage& msg,
     }
 
     // ── Фокус-сессии ──────────────────────────────────────────────────────────
-    if (cmd == "focus")  { focus_scene_.Start(msg);        return; }
-    if (cmd == "stop")   { focus_scene_.HandleStop(msg);   return; }
-    if (cmd == "pause")  { focus_scene_.HandlePause(msg);  return; }
+    if (cmd == "focus") {
+        focus_scene_.Start(msg);
+        return;
+    }
+    if (cmd == "stop") {
+        focus_scene_.HandleStop(msg);
+        return;
+    }
+    if (cmd == "pause") {
+        focus_scene_.HandlePause(msg);
+        return;
+    }
 
     // ── Пометить задачу выполненной ────────────────────────────────────────────
     if (cmd == "done") {
         notify_.SendMessage(msg.chat.id,
-            "✅ Открой /tasks и выбери задачу чтобы изменить её статус.");
+                            "✅ Открой /tasks и выбери задачу чтобы изменить её статус.");
         return;
     }
 
     // ── Напоминания ────────────────────────────────────────────────────────────
-    if (cmd == "remind") { reminder_scene_.Start(msg); return; }
+    if (cmd == "remind") {
+        reminder_scene_.Start(msg);
+        return;
+    }
 
     if (cmd == "reminders") {
         auto user_opt = user_service_.GetByTelegramId(tg_id);
-        if (!user_opt) { notify_.SendMessage(msg.chat.id, messages::kErrorGeneral); return; }
+        if (!user_opt) {
+            notify_.SendMessage(msg.chat.id, messages::kErrorGeneral);
+            return;
+        }
         auto reminders = reminder_service_.GetUserReminders(user_opt->id);
         if (reminders.empty()) {
             notify_.SendMessage(msg.chat.id,
-                "🔔 <b>Напоминаний нет</b>\n\nДобавь командой /remind");
+                                "🔔 <b>Напоминаний нет</b>\n\nДобавь командой /remind");
             return;
         }
-        std::string text = "🔔 <b>Напоминания</b> (" +
-                           std::to_string(reminders.size()) + "):\n\n";
+        std::string text = "🔔 <b>Напоминания</b> (" + std::to_string(reminders.size()) + "):\n\n";
         for (const auto& r : reminders) {
             const auto& msg_text = r.message;
-            text += "• " + (msg_text.size() > 60
-                            ? msg_text.substr(0, 60) + "…"
-                            : msg_text) + "\n";
+            text += "• " + (msg_text.size() > 60 ? msg_text.substr(0, 60) + "…" : msg_text) + "\n";
         }
         notify_.SendMessage(msg.chat.id, text);
         return;
@@ -172,10 +197,13 @@ void Router::HandleCommand(const dto::TgMessage& msg,
     // ── Статистика ────────────────────────────────────────────────────────────
     if (cmd == "stats") {
         auto user_opt = user_service_.GetByTelegramId(tg_id);
-        if (!user_opt) { notify_.SendMessage(msg.chat.id, messages::kErrorGeneral); return; }
+        if (!user_opt) {
+            notify_.SendMessage(msg.chat.id, messages::kErrorGeneral);
+            return;
+        }
         dto::DailyStatsRequest req;
         req.user_id = user_opt->id;
-        req.date    = core::FormatDate(core::NowUtc());
+        req.date = core::FormatDate(core::NowUtc());
         const auto stats = analytics_service_.GetDailyStats(req);
         std::string text = "📊 <b>Статистика за сегодня</b> (" + req.date + ")\n\n";
         text += "⏱ Фокус: <b>" + std::to_string(stats.focus_minutes) + " мин</b>\n";
@@ -189,9 +217,12 @@ void Router::HandleCommand(const dto::TgMessage& msg,
     // ── Недельный отчёт ────────────────────────────────────────────────────────
     if (cmd == "week") {
         auto user_opt = user_service_.GetByTelegramId(tg_id);
-        if (!user_opt) { notify_.SendMessage(msg.chat.id, messages::kErrorGeneral); return; }
+        if (!user_opt) {
+            notify_.SendMessage(msg.chat.id, messages::kErrorGeneral);
+            return;
+        }
         dto::WeeklyReportRequest req;
-        req.user_id    = user_opt->id;
+        req.user_id = user_opt->id;
         req.week_start = core::FormatDate(core::StartOfWeek(core::NowUtc()));
         const auto report = analytics_service_.GetWeeklyReport(req);
         std::string text = "📈 <b>Итоги недели</b> (с " + report.week_start + ")\n\n";
@@ -204,12 +235,18 @@ void Router::HandleCommand(const dto::TgMessage& msg,
     }
 
     // ── Еженедельный обзор ────────────────────────────────────────────────────
-    if (cmd == "review") { review_scene_.Start(msg); return; }
+    if (cmd == "review") {
+        review_scene_.Start(msg);
+        return;
+    }
 
     // ── Стрик ─────────────────────────────────────────────────────────────────
     if (cmd == "streak") {
         auto user_opt = user_service_.GetByTelegramId(tg_id);
-        if (!user_opt) { notify_.SendMessage(msg.chat.id, messages::kErrorGeneral); return; }
+        if (!user_opt) {
+            notify_.SendMessage(msg.chat.id, messages::kErrorGeneral);
+            return;
+        }
         const auto s = streak_service_.GetStreak(user_opt->id);
         std::string text = "🔥 <b>Стрик</b>\n\n";
         text += "Текущий: <b>" + std::to_string(s.current_streak) + " дней</b>\n";
@@ -224,12 +261,15 @@ void Router::HandleCommand(const dto::TgMessage& msg,
     // ── Цели ──────────────────────────────────────────────────────────────────
     if (cmd == "goals") {
         auto user_opt = user_service_.GetByTelegramId(tg_id);
-        if (!user_opt) { notify_.SendMessage(msg.chat.id, messages::kErrorGeneral); return; }
+        if (!user_opt) {
+            notify_.SendMessage(msg.chat.id, messages::kErrorGeneral);
+            return;
+        }
         dto::DailyStatsRequest req;
         req.user_id = user_opt->id;
-        req.date    = core::FormatDate(core::NowUtc());
+        req.date = core::FormatDate(core::NowUtc());
         const auto stats = analytics_service_.GetDailyStats(req);
-        const auto& cfg  = user_opt->settings;
+        const auto& cfg = user_opt->settings;
         std::string text = "🎯 <b>Цели на сегодня</b>\n\n";
         text += "⏱ Фокус: <b>" + std::to_string(stats.focus_minutes) + " / " +
                 std::to_string(cfg.daily_focus_goal_minutes) + " мин</b> ";
@@ -242,17 +282,20 @@ void Router::HandleCommand(const dto::TgMessage& msg,
     // ── Настройки ─────────────────────────────────────────────────────────────
     if (cmd == "settings") {
         auto user_opt = user_service_.GetByTelegramId(tg_id);
-        if (!user_opt) { notify_.SendMessage(msg.chat.id, messages::kErrorGeneral); return; }
+        if (!user_opt) {
+            notify_.SendMessage(msg.chat.id, messages::kErrorGeneral);
+            return;
+        }
         const auto& s = user_opt->settings;
         std::string text = "⚙️ <b>Настройки</b>\n\n";
         text += "🌍 Часовой пояс: <b>" + s.timezone + "</b>\n";
-        text += "🍅 Pomodoro: <b>" + std::to_string(s.pomodoro_work_minutes) +
-                " / " + std::to_string(s.pomodoro_break_minutes) + " мин</b>\n";
+        text += "🍅 Pomodoro: <b>" + std::to_string(s.pomodoro_work_minutes) + " / " +
+                std::to_string(s.pomodoro_break_minutes) + " мин</b>\n";
         text += "🧘 Deep Work: <b>" + std::to_string(s.deep_work_minutes) + " мин</b>\n";
-        text += "🎯 Цель фокуса в день: <b>" +
-                std::to_string(s.daily_focus_goal_minutes) + " мин</b>\n";
-        text += "📅 Цель фокуса в неделю: <b>" +
-                std::to_string(s.weekly_focus_goal_minutes) + " мин</b>";
+        text += "🎯 Цель фокуса в день: <b>" + std::to_string(s.daily_focus_goal_minutes) +
+                " мин</b>\n";
+        text += "📅 Цель фокуса в неделю: <b>" + std::to_string(s.weekly_focus_goal_minutes) +
+                " мин</b>";
         notify_.SendMessage(msg.chat.id, text);
         return;
     }

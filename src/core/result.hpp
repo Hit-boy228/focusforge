@@ -8,13 +8,13 @@
 // Основан на std::variant + helpers.
 // =============================================================================
 
+#include "errors.hpp"
+
 #include <functional>
+#include <optional>
 #include <stdexcept>
 #include <string>
-#include <optional>
 #include <variant>
-
-#include "errors.hpp"
 
 namespace focusforge::core {
 
@@ -32,7 +32,7 @@ namespace focusforge::core {
 
 template <typename T, typename E = DomainError>
 class Result {
-public:
+   public:
     // Конструкторы
     static Result Ok(T value) {
         Result r;
@@ -47,33 +47,42 @@ public:
     }
 
     // Проверки
-    bool IsOk()  const { return std::holds_alternative<T>(data_); }
-    bool IsErr() const { return std::holds_alternative<E>(data_); }
+    bool IsOk() const {
+        return std::holds_alternative<T>(data_);
+    }
+    bool IsErr() const {
+        return std::holds_alternative<E>(data_);
+    }
 
     // Доступ к значению (бросает если IsErr)
     T& Value() {
-        if (IsErr()) throw std::logic_error("Result::Value() called on Err");
+        if (IsErr())
+            throw std::logic_error("Result::Value() called on Err");
         return std::get<T>(data_);
     }
 
     const T& Value() const {
-        if (IsErr()) throw std::logic_error("Result::Value() called on Err");
+        if (IsErr())
+            throw std::logic_error("Result::Value() called on Err");
         return std::get<T>(data_);
     }
 
     T ValueOr(T default_value) const {
-        if (IsOk()) return std::get<T>(data_);
+        if (IsOk())
+            return std::get<T>(data_);
         return std::move(default_value);
     }
 
     // Доступ к ошибке (бросает если IsOk)
     E& Error() {
-        if (IsOk()) throw std::logic_error("Result::Error() called on Ok");
+        if (IsOk())
+            throw std::logic_error("Result::Error() called on Ok");
         return std::get<E>(data_);
     }
 
     const E& Error() const {
-        if (IsOk()) throw std::logic_error("Result::Error() called on Ok");
+        if (IsOk())
+            throw std::logic_error("Result::Error() called on Ok");
         return std::get<E>(data_);
     }
 
@@ -88,7 +97,8 @@ public:
 
     template <typename F>
     Result AndThen(F&& f) {
-        if (IsOk()) return f(std::get<T>(data_));
+        if (IsOk())
+            return f(std::get<T>(data_));
         return *this;
     }
 
@@ -100,7 +110,7 @@ public:
         return std::move(std::get<T>(data_));
     }
 
-private:
+   private:
     Result() = default;
     std::variant<T, E> data_;
 };
@@ -108,7 +118,7 @@ private:
 // Специализация для void (операции без возвращаемого значения)
 template <typename E>
 class Result<void, E> {
-public:
+   public:
     static Result Ok() {
         Result r;
         r.is_ok_ = true;
@@ -122,15 +132,20 @@ public:
         return r;
     }
 
-    bool IsOk() const  { return is_ok_; }
-    bool IsErr() const { return !is_ok_; }
+    bool IsOk() const {
+        return is_ok_;
+    }
+    bool IsErr() const {
+        return !is_ok_;
+    }
 
     E& Error() {
-        if (is_ok_) throw std::logic_error("Result<void>::Error() called on Ok");
+        if (is_ok_)
+            throw std::logic_error("Result<void>::Error() called on Ok");
         return *error_;
     }
 
-private:
+   private:
     Result() = default;
     bool is_ok_ = false;
     std::optional<E> error_;

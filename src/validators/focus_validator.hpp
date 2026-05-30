@@ -1,14 +1,15 @@
 #pragma once
 // src/validators/focus_validator.hpp
-#include <optional>
-#include <array>
-#include "dto/focus_requests.hpp"
 #include "core/errors.hpp"
+#include "dto/focus_requests.hpp"
+
+#include <array>
+#include <optional>
 
 namespace focusforge::validators {
 
 class FocusValidator {
-public:
+   public:
     static std::optional<core::ValidationError> ValidateStart(
         const dto::StartFocusSessionRequest& req);
     static std::optional<core::ValidationError> ValidateStop(

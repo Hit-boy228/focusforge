@@ -9,23 +9,21 @@
 namespace focusforge::handlers {
 
 class HealthHandler final : public userver::server::handlers::HttpHandlerBase {
-public:
+   public:
     static constexpr std::string_view kName = "handler-health";
     using HttpHandlerBase::HttpHandlerBase;
 
-    std::string HandleRequestThrow(
-        const userver::server::http::HttpRequest& request,
-        userver::server::request::RequestContext& ctx) const override;
+    std::string HandleRequestThrow(const userver::server::http::HttpRequest& request,
+                                   userver::server::request::RequestContext& ctx) const override;
 };
 
 class HealthReadyHandler final : public userver::server::handlers::HttpHandlerBase {
-public:
+   public:
     static constexpr std::string_view kName = "handler-health-ready";
     using HttpHandlerBase::HttpHandlerBase;
 
-    std::string HandleRequestThrow(
-        const userver::server::http::HttpRequest& request,
-        userver::server::request::RequestContext& ctx) const override;
+    std::string HandleRequestThrow(const userver::server::http::HttpRequest& request,
+                                   userver::server::request::RequestContext& ctx) const override;
 };
 
 }  // namespace focusforge::handlers

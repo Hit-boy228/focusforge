@@ -5,12 +5,11 @@
 namespace focusforge::handlers {
 
 class ReportsHandler final : public userver::server::handlers::HttpHandlerBase {
-public:
+   public:
     static constexpr std::string_view kName = "handler-reports";
     using HttpHandlerBase::HttpHandlerBase;
-    std::string HandleRequestThrow(
-        const userver::server::http::HttpRequest& req,
-        userver::server::request::RequestContext& ctx) const override;
+    std::string HandleRequestThrow(const userver::server::http::HttpRequest& req,
+                                   userver::server::request::RequestContext& ctx) const override;
 };
 
 }  // namespace focusforge::handlers

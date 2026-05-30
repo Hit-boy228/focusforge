@@ -1,14 +1,14 @@
 #include "cache_repository.hpp"
-#include <userver/logging/log.hpp>
+
 #include <userver/components/component_context.hpp>
+#include <userver/logging/log.hpp>
 
 namespace focusforge::repositories::redis {
 
-CacheRepository::CacheRepository(
-    const userver::components::ComponentConfig& cfg,
-    const userver::components::ComponentContext& ctx)
-    : ComponentBase(cfg, ctx),
-      redis_(ctx.FindComponent<userver::components::Redis>("redis-focusforge")
+CacheRepository::CacheRepository(const userver::components::ComponentConfig& cfg,
+                                 const userver::components::ComponentContext& ctx)
+    : ComponentBase(cfg, ctx)
+    , redis_(ctx.FindComponent<userver::components::Redis>("redis-focusforge")
                  .GetClient("focusforge")) {}
 
 std::optional<std::string> CacheRepository::Get(const std::string& key) {
@@ -16,7 +16,7 @@ std::optional<std::string> CacheRepository::Get(const std::string& key) {
 }
 
 void CacheRepository::Set(const std::string& key, const std::string& value,
-                            std::chrono::seconds ttl) {
+                          std::chrono::seconds ttl) {
     redis_->Set(key, value, ttl, {}).Get();
 }
 

@@ -1,5 +1,7 @@
 #include "report_validator.hpp"
+
 #include "core/time.hpp"
+
 #include <set>
 
 namespace focusforge::validators {
@@ -28,7 +30,7 @@ std::optional<core::ValidationError> ReportValidator::ValidateExport(
     if (!allowed.count(req.format))
         return core::ValidationError("format", "must be 'json' or 'markdown'");
     auto from = core::ParseIso8601(req.period_start + "T00:00:00Z");
-    auto to   = core::ParseIso8601(req.period_end   + "T00:00:00Z");
+    auto to = core::ParseIso8601(req.period_end + "T00:00:00Z");
     if (!from || !to)
         return core::ValidationError("period", "invalid date format");
     if (*from > *to)
