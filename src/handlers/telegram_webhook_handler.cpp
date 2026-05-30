@@ -1,7 +1,9 @@
 #include "telegram_webhook_handler.hpp"
-#include <userver/components/component_context.hpp>
-#include <userver/components/component_config.hpp>
+
 #include "dto/telegram_update.hpp"
+
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/formats/json/serialize.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/tracing/span.hpp>
@@ -25,24 +27,21 @@ properties:
 )");
 }
 
-TelegramWebhookHandler::TelegramWebhookHandler(
-    const userver::components::ComponentConfig& cfg,
-    const userver::components::ComponentContext& ctx)
-    : HttpHandlerBase(cfg, ctx),
-      idempotency_(ctx.FindComponent<services::IdempotencyService>()),
-      user_service_(ctx.FindComponent<services::UserService>()),
-      router_(ctx.FindComponent<telegram::Router>()),
-      webhook_secret_(cfg["webhook_secret"].As<std::string>("")),
-      bot_token_(cfg["bot_token"].As<std::string>("")) {}
+TelegramWebhookHandler::TelegramWebhookHandler(const userver::components::ComponentConfig& cfg,
+                                               const userver::components::ComponentContext& ctx)
+    : HttpHandlerBase(cfg, ctx)
+    , idempotency_(ctx.FindComponent<services::IdempotencyService>())
+    , user_service_(ctx.FindComponent<services::UserService>())
+    , router_(ctx.FindComponent<telegram::Router>())
+    , webhook_secret_(cfg["webhook_secret"].As<std::string>(""))
+    , bot_token_(cfg["bot_token"].As<std::string>("")) {}
 
 std::string TelegramWebhookHandler::HandleRequestThrow(
     const userver::server::http::HttpRequest& req,
     userver::server::request::RequestContext&) const {
-
     // 1. Верификация подписи Telegram
     if (!VerifyWebhookSecret(req)) {
-        req.GetHttpResponse().SetStatus(
-            userver::server::http::HttpStatus::kForbidden);
+        req.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kForbidden);
         return R"({"ok":false,"error":"invalid secret"})";
     }
 
@@ -51,8 +50,7 @@ std::string TelegramWebhookHandler::HandleRequestThrow(
     try {
         body = userver::formats::json::FromString(req.RequestBody());
     } catch (...) {
-        req.GetHttpResponse().SetStatus(
-            userver::server::http::HttpStatus::kBadRequest);
+        req.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kBadRequest);
         return R"({"ok":false,"error":"invalid json"})";
     }
 
@@ -72,8 +70,10 @@ std::string TelegramWebhookHandler::HandleRequestThrow(
     // 4. Обновляем last_seen
     const int64_t tg_user_id = update.GetUserId();
     if (tg_user_id > 0) {
-        try { user_service_.TouchUser(tg_user_id); }
-        catch (...) {}
+        try {
+            user_service_.TouchUser(tg_user_id);
+        } catch (...) {
+        }
     }
 
     // 5. Маршрутизация update
@@ -90,7 +90,8 @@ std::string TelegramWebhookHandler::HandleRequestThrow(
 
 bool TelegramWebhookHandler::VerifyWebhookSecret(
     const userver::server::http::HttpRequest& req) const {
-    if (webhook_secret_.empty()) return true;  // secret не настроен — разрешаем
+    if (webhook_secret_.empty())
+        return true;  // secret не настроен — разрешаем
     const auto& header = req.GetHeader("X-Telegram-Bot-Api-Secret-Token");
     return header == webhook_secret_;
 }

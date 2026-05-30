@@ -1,15 +1,16 @@
 #pragma once
 // src/repositories/redis/lock_repository.hpp
-#include <chrono>
-#include <string>
 #include <userver/components/component_base.hpp>
 #include <userver/storages/redis/client.hpp>
 #include <userver/storages/redis/component.hpp>
 
+#include <chrono>
+#include <string>
+
 namespace focusforge::repositories::redis {
 
 class LockRepository final : public userver::components::ComponentBase {
-public:
+   public:
     static constexpr std::string_view kName = "lock-repository";
     LockRepository(const userver::components::ComponentConfig& cfg,
                    const userver::components::ComponentContext& ctx);
@@ -20,7 +21,7 @@ public:
     void Release(const std::string& resource);
     bool IsLocked(const std::string& resource);
 
-private:
+   private:
     userver::storages::redis::ClientPtr redis_;
 };
 

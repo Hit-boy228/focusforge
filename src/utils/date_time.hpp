@@ -2,20 +2,21 @@
 // src/utils/date_time.hpp
 // Thin wrapper поверх core/time.hpp для удобства использования в utils
 #include "core/time.hpp"
+
 #include <string>
 
 namespace focusforge::utils {
 
-using core::NowUtc;
-using core::ParseIso8601;
-using core::FormatIso8601;
 using core::FormatDate;
 using core::FormatHuman;
+using core::FormatIso8601;
 using core::FormatRelative;
+using core::IsOverdue;
+using core::MinutesBetween;
+using core::NowUtc;
+using core::ParseIso8601;
 using core::StartOfDay;
 using core::StartOfWeek;
-using core::MinutesBetween;
-using core::IsOverdue;
 
 /// "Завтра" в формате YYYY-MM-DD
 inline std::string Tomorrow() {

@@ -1,6 +1,8 @@
 #include "user_repository.hpp"
-#include <userver/components/component_context.hpp>
+
 #include "core/ids.hpp"
+
+#include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
 
 namespace focusforge::repositories::postgres {
@@ -88,38 +90,38 @@ constexpr auto kUpsertStreak = R"~(
 )~";
 }  // namespace sql
 
-UserRepository::UserRepository(
-    const userver::components::ComponentConfig& cfg,
-    const userver::components::ComponentContext& ctx)
-    : ComponentBase(cfg, ctx),
-      pg_(ctx.FindComponent<userver::components::Postgres>("postgres-focusforge").GetCluster()) {}
+UserRepository::UserRepository(const userver::components::ComponentConfig& cfg,
+                               const userver::components::ComponentContext& ctx)
+    : ComponentBase(cfg, ctx)
+    , pg_(ctx.FindComponent<userver::components::Postgres>("postgres-focusforge").GetCluster()) {}
 
 std::optional<domain::User> UserRepository::FindByTelegramId(int64_t tg_id) {
     auto res = pg_->Execute(pg::ClusterHostType::kSlave, sql::kSelectByTgId, tg_id);
-    if (res.IsEmpty()) return std::nullopt;
+    if (res.IsEmpty())
+        return std::nullopt;
     return MapRow(res.Front());
 }
 
 std::optional<domain::User> UserRepository::FindById(const std::string& user_id) {
     auto res = pg_->Execute(pg::ClusterHostType::kSlave, sql::kSelectById, user_id);
-    if (res.IsEmpty()) return std::nullopt;
+    if (res.IsEmpty())
+        return std::nullopt;
     return MapRow(res.Front());
 }
 
 domain::User UserRepository::Upsert(const dto::RegisterUserRequest& req) {
     auto new_id = core::GenerateUuid();
-    auto res = pg_->Execute(pg::ClusterHostType::kMaster, sql::kUpsertUser,
-        new_id, req.telegram_id, req.username, req.first_name,
-        req.last_name, req.language_code, req.timezone);
+    auto res =
+        pg_->Execute(pg::ClusterHostType::kMaster, sql::kUpsertUser, new_id, req.telegram_id,
+                     req.username, req.first_name, req.last_name, req.language_code, req.timezone);
     return MapRow(res.Front());
 }
 
-void UserRepository::UpdateSettings(const std::string& user_id,
-                                     const domain::UserSettings& s) {
-    pg_->Execute(pg::ClusterHostType::kMaster, sql::kUpdateSettings,
-        user_id, s.daily_focus_goal_minutes, s.weekly_focus_goal_minutes,
-        s.pomodoro_work_minutes, s.pomodoro_break_minutes,
-        s.pomodoro_long_break_minutes, s.deep_work_minutes, s.timezone);
+void UserRepository::UpdateSettings(const std::string& user_id, const domain::UserSettings& s) {
+    pg_->Execute(pg::ClusterHostType::kMaster, sql::kUpdateSettings, user_id,
+                 s.daily_focus_goal_minutes, s.weekly_focus_goal_minutes, s.pomodoro_work_minutes,
+                 s.pomodoro_break_minutes, s.pomodoro_long_break_minutes, s.deep_work_minutes,
+                 s.timezone);
 }
 
 void UserRepository::UpdateLastSeen(const std::string& user_id) {
@@ -136,7 +138,7 @@ domain::Streak UserRepository::GetStreak(const std::string& user_id) {
         s.longest_streak = r["longest_streak"].As<int>();
         if (!r["last_active_date"].IsNull())
             s.last_active_date = r["last_active_date"].As<std::string>();
-        s.grace_days_used  = r["grace_days_used"].As<int>();
+        s.grace_days_used = r["grace_days_used"].As<int>();
         s.grace_days_total = r["grace_days_total"].As<int>();
         if (!r["streak_frozen_until"].IsNull())
             s.streak_frozen_until = r["streak_frozen_until"].As<std::string>();
@@ -145,30 +147,29 @@ domain::Streak UserRepository::GetStreak(const std::string& user_id) {
 }
 
 void UserRepository::UpdateStreak(const domain::Streak& s) {
-    pg_->Execute(pg::ClusterHostType::kMaster, sql::kUpsertStreak,
-        s.user_id, s.current_streak, s.longest_streak,
-        s.last_active_date, s.grace_days_used, s.grace_days_total,
-        s.streak_frozen_until);
+    pg_->Execute(pg::ClusterHostType::kMaster, sql::kUpsertStreak, s.user_id, s.current_streak,
+                 s.longest_streak, s.last_active_date, s.grace_days_used, s.grace_days_total,
+                 s.streak_frozen_until);
 }
 
 domain::User UserRepository::MapRow(const pg::Row& r) {
     domain::User u;
-    u.id            = r["id"].As<std::string>();
-    u.telegram_id   = r["telegram_id"].As<int64_t>();
-    u.username      = r["username"].As<std::optional<std::string>>().value_or("");
-    u.first_name    = r["first_name"].As<std::optional<std::string>>().value_or("");
-    u.last_name     = r["last_name"].As<std::optional<std::string>>().value_or("");
-    u.is_active     = r["is_active"].As<bool>();
-    u.settings.daily_focus_goal_minutes    = r["daily_focus_goal_minutes"].As<int>();
-    u.settings.weekly_focus_goal_minutes   = r["weekly_focus_goal_minutes"].As<int>();
-    u.settings.pomodoro_work_minutes       = r["pomodoro_work_minutes"].As<int>();
-    u.settings.pomodoro_break_minutes      = r["pomodoro_break_minutes"].As<int>();
+    u.id = r["id"].As<std::string>();
+    u.telegram_id = r["telegram_id"].As<int64_t>();
+    u.username = r["username"].As<std::optional<std::string>>().value_or("");
+    u.first_name = r["first_name"].As<std::optional<std::string>>().value_or("");
+    u.last_name = r["last_name"].As<std::optional<std::string>>().value_or("");
+    u.is_active = r["is_active"].As<bool>();
+    u.settings.daily_focus_goal_minutes = r["daily_focus_goal_minutes"].As<int>();
+    u.settings.weekly_focus_goal_minutes = r["weekly_focus_goal_minutes"].As<int>();
+    u.settings.pomodoro_work_minutes = r["pomodoro_work_minutes"].As<int>();
+    u.settings.pomodoro_break_minutes = r["pomodoro_break_minutes"].As<int>();
     u.settings.pomodoro_long_break_minutes = r["pomodoro_long_break_minutes"].As<int>();
-    u.settings.deep_work_minutes           = r["deep_work_minutes"].As<int>();
-    u.settings.timezone    = r["timezone"].As<std::optional<std::string>>().value_or("UTC");
+    u.settings.deep_work_minutes = r["deep_work_minutes"].As<int>();
+    u.settings.timezone = r["timezone"].As<std::optional<std::string>>().value_or("UTC");
     u.settings.language_code = r["language_code"].As<std::optional<std::string>>().value_or("en");
-    u.created_at   = r["created_at"].As<domain::Timestamp>();
-    u.updated_at   = r["updated_at"].As<domain::Timestamp>();
+    u.created_at = r["created_at"].As<domain::Timestamp>();
+    u.updated_at = r["updated_at"].As<domain::Timestamp>();
     u.last_seen_at = r["last_seen_at"].As<domain::Timestamp>();
     return u;
 }

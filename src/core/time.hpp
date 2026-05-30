@@ -11,9 +11,9 @@
 
 namespace focusforge::core {
 
-using Clock     = std::chrono::system_clock;
+using Clock = std::chrono::system_clock;
 using TimePoint = std::chrono::system_clock::time_point;
-using Duration  = std::chrono::seconds;
+using Duration = std::chrono::seconds;
 
 /// Текущее время UTC
 inline TimePoint NowUtc() {

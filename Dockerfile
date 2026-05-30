@@ -16,18 +16,17 @@ COPY conanfile.py .
 
 # Устанавливаем зависимости через Conan (без userver — он в базовом образе)
 RUN pip install conan==2.0.17 --quiet && \
-    conan install . --build=missing -s build_type=${BUILD_TYPE} || true
+    conan profile detect --force && \
+    conan install . --build=missing -s build_type=Release
 
 # Копируем исходники
 COPY src/ src/
 COPY configs/ configs/
 
-# Сборка
-RUN cmake -B cmake-build \
-    -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-    -DBUILD_TESTS=OFF \
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    && cmake --build cmake-build --parallel "$(nproc)" --target focusforge
+# Сборка через Conan-пресет — cmake получает toolchain с Conan-пакетами
+RUN cmake --preset conan-release \
+          -DBUILD_TESTS=OFF \
+    && cmake --build build/Release --parallel "$(nproc)" --target focusforge
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
 FROM --platform=linux/amd64 ubuntu:22.04 AS runtime
@@ -62,7 +61,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY --from=builder /build/cmake-build/focusforge /app/focusforge
+COPY --from=builder /build/build/Release/focusforge /app/focusforge
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libmongocrypt.so.0* /usr/lib/x86_64-linux-gnu/
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libcctz.so* /usr/lib/x86_64-linux-gnu/
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libbson-1.0.so* /usr/lib/x86_64-linux-gnu/

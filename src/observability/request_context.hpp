@@ -1,7 +1,7 @@
 #pragma once
 // src/observability/request_context.hpp
-#include <string>
 #include <optional>
+#include <string>
 
 namespace focusforge::observability {
 
@@ -9,8 +9,8 @@ namespace focusforge::observability {
 struct RequestContext {
     std::string request_id;
     std::optional<std::string> user_id;
-    std::optional<int64_t>     telegram_id;
-    std::optional<int64_t>     telegram_update_id;
+    std::optional<int64_t> telegram_id;
+    std::optional<int64_t> telegram_update_id;
     std::string operation;
 
     static RequestContext FromTelegramUpdate(int64_t update_id, int64_t tg_id);

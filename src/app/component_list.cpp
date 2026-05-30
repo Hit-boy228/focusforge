@@ -5,76 +5,76 @@
 // Всё остальное добавляем явно.
 
 #include "component_list.hpp"
+
 #include <userver/components/component_context.hpp>
 
 // Databases
-#include <userver/storages/postgres/component.hpp>
 #include <userver/storages/mongo/component.hpp>
+#include <userver/storages/postgres/component.hpp>
 #include <userver/storages/redis/component.hpp>
-
 #include <userver/storages/secdist/component.hpp>
 #include <userver/storages/secdist/provider_component.hpp>
 
 // HTTP client + DNS (не входят в MinimalServerComponentList)
-#include <userver/clients/http/component.hpp>
 #include <userver/clients/dns/component.hpp>
+#include <userver/clients/http/component.hpp>
 #include <userver/clients/http/middlewares/pipeline_component.hpp>
 
 // Metrics endpoint
 #include <userver/server/handlers/server_monitor.hpp>
 
 // Repositories — PostgreSQL
-#include "repositories/postgres/user_repository.hpp"
-#include "repositories/postgres/task_repository.hpp"
-#include "repositories/postgres/subtask_repository.hpp"
-#include "repositories/postgres/session_repository.hpp"
-#include "repositories/postgres/reminder_repository.hpp"
-#include "repositories/postgres/goal_repository.hpp"
 #include "repositories/postgres/activity_repository.hpp"
+#include "repositories/postgres/goal_repository.hpp"
 #include "repositories/postgres/idempotency_repository.hpp"
+#include "repositories/postgres/reminder_repository.hpp"
+#include "repositories/postgres/session_repository.hpp"
+#include "repositories/postgres/subtask_repository.hpp"
+#include "repositories/postgres/task_repository.hpp"
+#include "repositories/postgres/user_repository.hpp"
 
 // Repositories — Redis
+#include "repositories/redis/cache_repository.hpp"
+#include "repositories/redis/conversation_state_repository.hpp"
 #include "repositories/redis/lock_repository.hpp"
 #include "repositories/redis/rate_limit_repository.hpp"
-#include "repositories/redis/conversation_state_repository.hpp"
-#include "repositories/redis/cache_repository.hpp"
 
 // Repositories — MongoDB
-#include "repositories/mongo/preferences_repository.hpp"
 #include "repositories/mongo/event_log_repository.hpp"
+#include "repositories/mongo/preferences_repository.hpp"
 #include "repositories/mongo/report_snapshot_repository.hpp"
 
 // Services
+#include "services/analytics_service.hpp"
+#include "services/conversation_service.hpp"
+#include "services/focus_service.hpp"
 #include "services/idempotency_service.hpp"
-#include "services/user_service.hpp"
+#include "services/notification_service.hpp"
+#include "services/planner_service.hpp"
+#include "services/reminder_service.hpp"
 #include "services/streak_service.hpp"
 #include "services/task_service.hpp"
-#include "services/focus_service.hpp"
-#include "services/reminder_service.hpp"
-#include "services/planner_service.hpp"
-#include "services/analytics_service.hpp"
-#include "services/notification_service.hpp"
-#include "services/conversation_service.hpp"
+#include "services/user_service.hpp"
 
 // Handlers
-#include "handlers/health_handler.hpp"
-#include "handlers/telegram_webhook_handler.hpp"
-#include "handlers/tasks_handler.hpp"
+#include "handlers/admin_handler.hpp"
 #include "handlers/focus_handler.hpp"
-#include "handlers/users_handler.hpp"
+#include "handlers/health_handler.hpp"
 #include "handlers/reminders_handler.hpp"
 #include "handlers/reports_handler.hpp"
-#include "handlers/admin_handler.hpp"
+#include "handlers/tasks_handler.hpp"
+#include "handlers/telegram_webhook_handler.hpp"
+#include "handlers/users_handler.hpp"
 
 // Telegram
-#include "telegram/scenes/start_scene.hpp"
+#include "telegram/callback_router.hpp"
+#include "telegram/router.hpp"
 #include "telegram/scenes/create_task_scene.hpp"
 #include "telegram/scenes/edit_task_scene.hpp"
 #include "telegram/scenes/focus_scene.hpp"
 #include "telegram/scenes/reminder_scene.hpp"
 #include "telegram/scenes/review_scene.hpp"
-#include "telegram/callback_router.hpp"
-#include "telegram/router.hpp"
+#include "telegram/scenes/start_scene.hpp"
 
 // Observability
 #include "observability/metrics.hpp"
@@ -85,7 +85,6 @@
 namespace focusforge::app {
 
 void AppendComponents(userver::components::ComponentList& list) {
-
     // ── External clients ──────────────────────────────────────────────────────
     list.Append<userver::clients::dns::Component>();
     list.Append<userver::components::HttpClient>();

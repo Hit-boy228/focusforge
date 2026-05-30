@@ -9,7 +9,7 @@ std::vector<std::string> ExtractHashtags(const std::string& text) {
     std::vector<std::string> tags;
     std::regex tag_re(R"(#([A-Za-z0-9_а-яА-Я]+))");
     auto begin = std::sregex_iterator(text.begin(), text.end(), tag_re);
-    auto end   = std::sregex_iterator();
+    auto end = std::sregex_iterator();
     for (auto it = begin; it != end; ++it) {
         tags.push_back(NormalizeTagName((*it)[1].str()));
     }
@@ -26,17 +26,21 @@ std::optional<int> ExtractPriorityHint(const std::string& text) {
 }
 
 bool IsValidRrule(const std::string& rrule) {
-    if (rrule.empty()) return false;
+    if (rrule.empty())
+        return false;
     // Упрощённая валидация: должен начинаться с FREQ=
     return rrule.find("FREQ=") != std::string::npos;
 }
 
 std::string FormatDuration(int minutes) {
-    if (minutes <= 0) return "0м";
+    if (minutes <= 0)
+        return "0м";
     int h = minutes / 60;
     int m = minutes % 60;
-    if (h == 0) return std::to_string(m) + "м";
-    if (m == 0) return std::to_string(h) + "ч";
+    if (h == 0)
+        return std::to_string(m) + "м";
+    if (m == 0)
+        return std::to_string(h) + "ч";
     return std::to_string(h) + "ч " + std::to_string(m) + "м";
 }
 

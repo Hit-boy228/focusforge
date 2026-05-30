@@ -1,20 +1,21 @@
 #pragma once
 // src/telegram/scenes/start_scene.hpp
 
-#include <userver/components/component_base.hpp>
 #include "dto/telegram_update.hpp"
+
+#include <userver/components/component_base.hpp>
 
 // Forward declarations
 namespace focusforge::services {
 class UserService;
 class NotificationService;
 class ConversationService;
-}
+}  // namespace focusforge::services
 
 namespace focusforge::telegram::scenes {
 
 class StartScene final : public userver::components::ComponentBase {
-public:
+   public:
     static constexpr std::string_view kName = "scene-start";
 
     StartScene(const userver::components::ComponentConfig& cfg,
@@ -22,8 +23,8 @@ public:
 
     void Handle(const dto::TgMessage& msg);
 
-private:
-    services::UserService&         user_service_;
+   private:
+    services::UserService& user_service_;
     services::NotificationService& notify_;
     services::ConversationService& conv_;
 };

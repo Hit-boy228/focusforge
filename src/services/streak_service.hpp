@@ -1,19 +1,21 @@
 #pragma once
 // src/services/streak_service.hpp
 
-#include <string>
+#include "domain/user.hpp"
 
 #include <userver/components/component_base.hpp>
 
-#include "domain/user.hpp"
+#include <string>
 
 // Forward declarations
-namespace focusforge::repositories::postgres { class UserRepository; }
+namespace focusforge::repositories::postgres {
+class UserRepository;
+}
 
 namespace focusforge::services {
 
 class StreakService final : public userver::components::ComponentBase {
-public:
+   public:
     static constexpr std::string_view kName = "streak-service";
 
     StreakService(const userver::components::ComponentConfig& cfg,
@@ -30,7 +32,7 @@ public:
 
     domain::Streak GetStreak(const std::string& user_id);
 
-private:
+   private:
     repositories::postgres::UserRepository& user_repo_;
 };
 

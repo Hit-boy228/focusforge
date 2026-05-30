@@ -1,10 +1,11 @@
 #pragma once
 // src/telegram/scenes/focus_scene.hpp
 
-#include <string>
+#include "dto/telegram_update.hpp"
 
 #include <userver/components/component_base.hpp>
-#include "dto/telegram_update.hpp"
+
+#include <string>
 
 // Forward declarations
 namespace focusforge::services {
@@ -12,12 +13,12 @@ class FocusService;
 class UserService;
 class NotificationService;
 class ConversationService;
-}
+}  // namespace focusforge::services
 
 namespace focusforge::telegram::scenes {
 
 class FocusScene final : public userver::components::ComponentBase {
-public:
+   public:
     static constexpr std::string_view kName = "scene-focus";
 
     FocusScene(const userver::components::ComponentConfig& cfg,
@@ -30,13 +31,13 @@ public:
     /// Обработка выбора режима фокуса через inline-кнопку (focus:mode:*)
     void HandleModeCallback(const dto::TgCallbackQuery& cq, const std::string& mode);
 
-private:
+   private:
     void AskMode(int64_t chat_id, int64_t user_id);
     void AskCustomDuration(int64_t chat_id, int64_t user_id);
     void LaunchSession(int64_t chat_id, int64_t tg_user_id);
 
-    services::FocusService&        focus_service_;
-    services::UserService&         user_service_;
+    services::FocusService& focus_service_;
+    services::UserService& user_service_;
     services::NotificationService& notify_;
     services::ConversationService& conv_;
 };

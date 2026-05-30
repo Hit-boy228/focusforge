@@ -1,19 +1,17 @@
 #include "tasks_handler.hpp"
+
 #include <userver/components/component_context.hpp>
 #include <userver/formats/json/serialize.hpp>
 #include <userver/formats/json/value_builder.hpp>
 
 namespace focusforge::handlers {
 
-TasksHandler::TasksHandler(
-    const userver::components::ComponentConfig& cfg,
-    const userver::components::ComponentContext& ctx)
-    : HttpHandlerBase(cfg, ctx),
-      task_service_(ctx.FindComponent<services::TaskService>()) {}
+TasksHandler::TasksHandler(const userver::components::ComponentConfig& cfg,
+                           const userver::components::ComponentContext& ctx)
+    : HttpHandlerBase(cfg, ctx), task_service_(ctx.FindComponent<services::TaskService>()) {}
 
-std::string TasksHandler::HandleRequestThrow(
-    const userver::server::http::HttpRequest& req,
-    userver::server::request::RequestContext&) const {
+std::string TasksHandler::HandleRequestThrow(const userver::server::http::HttpRequest& req,
+                                             userver::server::request::RequestContext&) const {
     // Internal REST API — используется для admin/debug
     // Основной поток — через Telegram webhook
     const auto& path = req.GetRequestPath();

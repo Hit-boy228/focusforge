@@ -27,9 +27,13 @@ std::optional<core::ValidationError> FocusValidator::ValidateSnooze(
     const dto::SnoozeReminderRequest& req) {
     if (req.reminder_id.empty())
         return core::ValidationError("reminder_id", "required");
-    static const std::array<int,4> allowed = {10, 30, 60, 1440};
+    static const std::array<int, 4> allowed = {10, 30, 60, 1440};
     bool valid = false;
-    for (auto m : allowed) if (req.snooze_minutes == m) { valid = true; break; }
+    for (auto m : allowed)
+        if (req.snooze_minutes == m) {
+            valid = true;
+            break;
+        }
     if (!valid)
         return core::ValidationError("snooze_minutes", "must be 10, 30, 60 or 1440");
     return std::nullopt;

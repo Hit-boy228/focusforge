@@ -1,7 +1,8 @@
 #pragma once
 // src/app/bootstrap.hpp
-#include <string>
 #include <userver/components/component_context.hpp>
+
+#include <string>
 
 namespace focusforge::app {
 

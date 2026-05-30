@@ -1,18 +1,19 @@
 #pragma once
 // src/repositories/postgres/idempotency_repository.hpp
-#include <optional>
-#include <string>
 #include <userver/components/component_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 
+#include <optional>
+#include <string>
+
 namespace focusforge::repositories::postgres {
 
 class IdempotencyRepository final : public userver::components::ComponentBase {
-public:
+   public:
     static constexpr std::string_view kName = "idempotency-repository";
     IdempotencyRepository(const userver::components::ComponentConfig& cfg,
-                           const userver::components::ComponentContext& ctx);
+                          const userver::components::ComponentContext& ctx);
 
     /// Возвращает true если update_id уже обрабатывался (и записывает его)
     bool CheckAndMarkTelegramUpdate(int64_t update_id);
@@ -27,7 +28,7 @@ public:
     /// Очистка просроченных записей
     int CleanupExpired();
 
-private:
+   private:
     userver::storages::postgres::ClusterPtr pg_;
 };
 

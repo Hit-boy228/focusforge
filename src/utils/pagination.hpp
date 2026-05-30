@@ -4,8 +4,8 @@
 
 namespace focusforge::utils {
 
-using core::PageRequest;
 using core::Page;
+using core::PageRequest;
 
 /// Построить PageRequest из HTTP query params (offset/limit)
 inline core::PageRequest ParsePageRequest(int limit, int offset) {

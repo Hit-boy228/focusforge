@@ -1,20 +1,20 @@
 #pragma once
 // src/services/notification_service.hpp
 
-#include <string>
-
-#include <userver/components/component_base.hpp>
-#include <userver/clients/http/component.hpp>
-
 #include "domain/focus_session.hpp"
 #include "domain/reminder.hpp"
-#include "domain/report.hpp"          // WeeklyReport
-#include "dto/telegram_update.hpp"    // SendMessageRequest
+#include "domain/report.hpp"        // WeeklyReport
+#include "dto/telegram_update.hpp"  // SendMessageRequest
+
+#include <userver/clients/http/component.hpp>
+#include <userver/components/component_base.hpp>
+
+#include <string>
 
 namespace focusforge::services {
 
 class NotificationService final : public userver::components::ComponentBase {
-public:
+   public:
     static constexpr std::string_view kName = "notification-service";
 
     NotificationService(const userver::components::ComponentConfig& cfg,
@@ -31,10 +31,9 @@ public:
     void SendReminder(int64_t chat_id, const domain::Reminder& r);
     void SendWeeklyReport(int64_t chat_id, const domain::WeeklyReport& report);
 
-private:
+   private:
     std::string BuildApiUrl(const std::string& method) const;
-    void PostToTelegramApi(const std::string& method,
-                            const userver::formats::json::Value& body);
+    void PostToTelegramApi(const std::string& method, const userver::formats::json::Value& body);
 
     userver::clients::http::Client& http_client_;
     std::string bot_token_;

@@ -1,1 +1,13 @@
-Checks: "-*"
+Checks: >
+  -*,
+  bugprone-use-after-move,
+  bugprone-assert-side-effect,
+  bugprone-dangling-handle,
+  bugprone-infinite-loop,
+  bugprone-unused-raii,
+  bugprone-move-forwarding-reference,
+  bugprone-string-constructor,
+
+WarningsAsErrors: ""
+
+HeaderFilterRegex: "src/.*\\.hpp$"

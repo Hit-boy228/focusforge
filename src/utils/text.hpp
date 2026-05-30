@@ -5,20 +5,20 @@
 
 namespace focusforge::utils {
 
-using core::Trim;
-using core::ToLower;
-using core::Split;
 using core::EscapeHtml;
-using core::Truncate;
-using core::NormalizeTagName;
 using core::ExtractHashtags;
 using core::ExtractPriorityHint;
-using core::IsValidRrule;
 using core::FormatDuration;
+using core::IsValidRrule;
+using core::NormalizeTagName;
 using core::ProgressBar;
+using core::Split;
+using core::ToLower;
+using core::Trim;
+using core::Truncate;
 
 /// Множественное число: "1 задача" / "2 задачи" / "5 задач"
-std::string PluralRu(int n, const std::string& one,
-                      const std::string& few, const std::string& many);
+std::string PluralRu(int n, const std::string& one, const std::string& few,
+                     const std::string& many);
 
 }  // namespace focusforge::utils

@@ -1,22 +1,24 @@
 #pragma once
 // src/services/reminder_service.hpp
 
-#include <string>
-#include <vector>
-
-#include <userver/components/component_base.hpp>
-
 #include "domain/reminder.hpp"
 #include "dto/focus_requests.hpp"
 #include "dto/report_requests.hpp"
 
+#include <userver/components/component_base.hpp>
+
+#include <string>
+#include <vector>
+
 // Forward declarations
-namespace focusforge::repositories::postgres { class ReminderRepository; }
+namespace focusforge::repositories::postgres {
+class ReminderRepository;
+}
 
 namespace focusforge::services {
 
 class ReminderService final : public userver::components::ComponentBase {
-public:
+   public:
     static constexpr std::string_view kName = "reminder-service";
 
     ReminderService(const userver::components::ComponentConfig& cfg,
@@ -32,7 +34,7 @@ public:
     /// Вызывается шедулером каждые 30 сек — отправляет просроченные напоминания
     void ProcessDueReminders();
 
-private:
+   private:
     void SendReminder(const domain::Reminder& r);
 
     repositories::postgres::ReminderRepository& reminder_repo_;

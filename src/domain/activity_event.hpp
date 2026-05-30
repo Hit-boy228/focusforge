@@ -5,18 +5,18 @@
 // src/domain/activity_event.hpp
 // =============================================================================
 
-#include <optional>
-#include <string>
-
 #include "enums.hpp"
 #include "user.hpp"
+
+#include <optional>
+#include <string>
 
 namespace focusforge::domain {
 
 /// Бизнес-событие. Хранится в MongoDB event_logs.
 struct ActivityEvent {
-    Uuid        id;
-    Uuid        user_id;
+    Uuid id;
+    Uuid user_id;
     ActivityEventType event_type;
 
     // Контекст события (опциональные ссылки на сущности)

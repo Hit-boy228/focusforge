@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 find_package(GTest REQUIRED)
+include(GoogleTest)
 
 # ── Unit tests ────────────────────────────────────────────────────────────────
 add_executable(focusforge_unit_tests

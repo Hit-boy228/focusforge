@@ -1,23 +1,24 @@
 #pragma once
 // src/telegram/command_parser.hpp
+#include "core/text.hpp"
+#include "domain/enums.hpp"
+
 #include <optional>
 #include <string>
 #include <vector>
-#include "domain/enums.hpp"
-#include "core/text.hpp"
 
 namespace focusforge::telegram {
 
 /// Результат парсинга быстрой команды типа "buy milk tomorrow 18:00 p2 #home"
 struct ParsedQuickInput {
-    std::string              title;
+    std::string title;
     std::optional<std::string> deadline_hint;  // "tomorrow", "18:00", ISO
     std::optional<domain::TaskPriority> priority;
     std::vector<std::string> tags;
 };
 
 class CommandParser {
-public:
+   public:
     /// Парсит короткую команду без явного /task
     static ParsedQuickInput ParseQuickInput(const std::string& text);
 

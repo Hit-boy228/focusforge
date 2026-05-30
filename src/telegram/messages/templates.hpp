@@ -49,8 +49,7 @@ const std::string kAskTaskTags =
     "Введи хэштеги через пробел: <code>#работа #срочно</code>\n\n"
     "Или нажми «Пропустить»:";
 
-const std::string kTaskCreated =
-    "✅ <b>Задача создана!</b>\n\n{task_card}";
+const std::string kTaskCreated = "✅ <b>Задача создана!</b>\n\n{task_card}";
 
 // ── Focus session ─────────────────────────────────────────────────────────────
 const std::string kAskFocusMode = "🎯 Выбери режим фокуса:";
@@ -82,38 +81,26 @@ const std::string kSessionCompleted = R"(
 Что удалось сделать?
 )";
 
-const std::string kAskReflectionDone =
-    "✏️ Что сделал за сессию? (кратко или /skip)";
-const std::string kAskReflectionBlocked =
-    "🚧 Что помешало? (или /skip)";
-const std::string kAskReflectionTransfer =
-    "➡️ Что перенести на следующий раз? (или /skip)";
+const std::string kAskReflectionDone = "✏️ Что сделал за сессию? (кратко или /skip)";
+const std::string kAskReflectionBlocked = "🚧 Что помешало? (или /skip)";
+const std::string kAskReflectionTransfer = "➡️ Что перенести на следующий раз? (или /skip)";
 
 // ── Reminders ─────────────────────────────────────────────────────────────────
-const std::string kAskReminderText =
-    "🔔 Введи текст напоминания:";
+const std::string kAskReminderText = "🔔 Введи текст напоминания:";
 const std::string kAskReminderTime =
     "🕐 Когда напомнить?\n\nПример: <code>15:30</code>, <code>завтра 10:00</code>";
-const std::string kReminderCreated =
-    "✅ Напоминание установлено на <b>{time}</b>";
+const std::string kReminderCreated = "✅ Напоминание установлено на <b>{time}</b>";
 
 // ── Errors ────────────────────────────────────────────────────────────────────
-const std::string kErrorGeneral =
-    "❌ Что-то пошло не так. Попробуй ещё раз или введи /cancel";
-const std::string kErrorNotFound =
-    "❌ Не нашёл. Проверь ID или попробуй заново.";
-const std::string kErrorRateLimit =
-    "⏳ Слишком много запросов. Подожди немного.";
+const std::string kErrorGeneral = "❌ Что-то пошло не так. Попробуй ещё раз или введи /cancel";
+const std::string kErrorNotFound = "❌ Не нашёл. Проверь ID или попробуй заново.";
+const std::string kErrorRateLimit = "⏳ Слишком много запросов. Подожди немного.";
 const std::string kErrorSessionExists =
     "🔄 У тебя уже есть активная сессия! Используй /stop чтобы завершить.";
-const std::string kErrorSessionNotFound =
-    "❌ Активной сессии нет. Запусти новую командой /focus";
-const std::string kErrorTaskLimit =
-    "📦 Достигнут лимит задач. Архивируй или удали старые.";
-const std::string kCancelled =
-    "↩️ Действие отменено.";
-const std::string kUnknownCommand =
-    "❓ Не знаю такой команды. Введи /help для справки.";
+const std::string kErrorSessionNotFound = "❌ Активной сессии нет. Запусти новую командой /focus";
+const std::string kErrorTaskLimit = "📦 Достигнут лимит задач. Архивируй или удали старые.";
+const std::string kCancelled = "↩️ Действие отменено.";
+const std::string kUnknownCommand = "❓ Не знаю такой команды. Введи /help для справки.";
 
 // ── Help ──────────────────────────────────────────────────────────────────────
 const std::string kHelp = R"(
@@ -156,11 +143,8 @@ const std::string kReviewIntro = R"(
 Готов начать?
 )";
 
-const std::string kReviewQuestion1 =
-    "💪 <b>Что получилось хорошо на этой неделе?</b>";
-const std::string kReviewQuestion2 =
-    "🤔 <b>Что хочешь улучшить на следующей неделе?</b>";
-const std::string kReviewQuestion3 =
-    "🎯 <b>Главная цель на следующую неделю?</b>";
+const std::string kReviewQuestion1 = "💪 <b>Что получилось хорошо на этой неделе?</b>";
+const std::string kReviewQuestion2 = "🤔 <b>Что хочешь улучшить на следующей неделе?</b>";
+const std::string kReviewQuestion3 = "🎯 <b>Главная цель на следующую неделю?</b>";
 
 }  // namespace focusforge::telegram::messages
