@@ -28,6 +28,27 @@ std::string NotificationService::BuildApiUrl(const std::string& method) const {
     return "https://api.telegram.org/bot" + bot_token_ + "/" + method;
 }
 
+userver::formats::json::Value NotificationService::SerializeKeyboard(
+    const dto::InlineKeyboardMarkup& kb) {
+    userver::formats::json::ValueBuilder rows(userver::formats::json::Type::kArray);
+    for (const auto& row : kb) {
+        userver::formats::json::ValueBuilder btns(userver::formats::json::Type::kArray);
+        for (const auto& btn : row) {
+            userver::formats::json::ValueBuilder b;
+            b["text"] = btn.text;
+            if (!btn.url.empty())
+                b["url"] = btn.url;
+            else
+                b["callback_data"] = btn.callback_data;
+            btns.PushBack(b.ExtractValue());
+        }
+        rows.PushBack(btns.ExtractValue());
+    }
+    userver::formats::json::ValueBuilder markup;
+    markup["inline_keyboard"] = rows.ExtractValue();
+    return markup.ExtractValue();
+}
+
 void NotificationService::SendRequest(const dto::SendMessageRequest& req) {
     if (bot_token_.empty()) {
         LOG_WARNING() << "TELEGRAM_BOT_TOKEN not set, skip SendRequest";
@@ -38,28 +59,43 @@ void NotificationService::SendRequest(const dto::SendMessageRequest& req) {
     body["text"] = req.text;
     body["parse_mode"] = req.parse_mode;
     body["disable_web_page_preview"] = req.disable_web_page_preview;
+    if (req.reply_to_message_id)
+        body["reply_to_message_id"] = *req.reply_to_message_id;
 
-    if (req.reply_markup && !req.reply_markup->empty()) {
-        userver::formats::json::ValueBuilder rows(userver::formats::json::Type::kArray);
-        for (const auto& row : *req.reply_markup) {
-            userver::formats::json::ValueBuilder btns(userver::formats::json::Type::kArray);
-            for (const auto& btn : row) {
-                userver::formats::json::ValueBuilder b;
-                b["text"] = btn.text;
-                if (!btn.url.empty())
-                    b["url"] = btn.url;
-                else
-                    b["callback_data"] = btn.callback_data;
-                btns.PushBack(b.ExtractValue());
-            }
-            rows.PushBack(btns.ExtractValue());
-        }
-        userver::formats::json::ValueBuilder kb;
-        kb["inline_keyboard"] = rows.ExtractValue();
-        body["reply_markup"] = kb.ExtractValue();
-    }
+    if (req.reply_markup && !req.reply_markup->empty())
+        body["reply_markup"] = SerializeKeyboard(*req.reply_markup);
 
     PostToTelegramApi("sendMessage", body.ExtractValue());
+}
+
+void NotificationService::EditMessageText(const dto::EditMessageRequest& req) {
+    if (bot_token_.empty()) {
+        LOG_WARNING() << "TELEGRAM_BOT_TOKEN not set, skip EditMessageText";
+        return;
+    }
+    userver::formats::json::ValueBuilder body;
+    body["chat_id"] = req.chat_id;
+    body["message_id"] = req.message_id;
+    body["text"] = req.text;
+    body["parse_mode"] = req.parse_mode;
+    // reply_markup всегда передаём: пустой массив убирает старые кнопки,
+    // непустой — заменяет их новыми.
+    body["reply_markup"] =
+        SerializeKeyboard(req.reply_markup.value_or(dto::InlineKeyboardMarkup{}));
+    PostToTelegramApi("editMessageText", body.ExtractValue());
+}
+
+void NotificationService::AnswerCallbackQuery(const dto::AnswerCallbackRequest& req) {
+    if (bot_token_.empty()) {
+        LOG_WARNING() << "TELEGRAM_BOT_TOKEN not set, skip AnswerCallbackQuery";
+        return;
+    }
+    userver::formats::json::ValueBuilder body;
+    body["callback_query_id"] = req.callback_query_id;
+    if (req.text)
+        body["text"] = *req.text;
+    body["show_alert"] = req.show_alert;
+    PostToTelegramApi("answerCallbackQuery", body.ExtractValue());
 }
 
 void NotificationService::SendMessage(int64_t chat_id, const std::string& text,

@@ -33,6 +33,10 @@ void ReminderService::SnoozeReminder(const dto::SnoozeReminderRequest& req) {
     reminder_repo_.Snooze(req.reminder_id, until_iso, req.user_id, req.snooze_minutes, reason_str);
 }
 
+void ReminderService::CancelReminder(const std::string& reminder_id, const std::string& user_id) {
+    reminder_repo_.Cancel(reminder_id, user_id);
+}
+
 std::vector<domain::Reminder> ReminderService::GetUserReminders(const std::string& user_id) {
     return reminder_repo_.FindByUser(user_id);
 }

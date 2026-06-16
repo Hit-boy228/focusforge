@@ -12,11 +12,13 @@ class FocusService;
 class ReminderService;
 class NotificationService;
 class ConversationService;
+class UserService;
 }  // namespace focusforge::services
 namespace focusforge::telegram::scenes {
 class CreateTaskScene;
 class EditTaskScene;
 class FocusScene;
+class SettingsScene;
 }  // namespace focusforge::telegram::scenes
 
 namespace focusforge::telegram {
@@ -34,23 +36,34 @@ class CallbackRouter final : public userver::components::ComponentBase {
     void Route(const dto::TgCallbackQuery& cq);
 
    private:
-    void HandleTaskCallback(const dto::TgCallbackQuery& cq, const std::vector<std::string>& parts);
-    void HandleFocusCallback(const dto::TgCallbackQuery& cq, const std::vector<std::string>& parts);
-    void HandleReminderCallback(const dto::TgCallbackQuery& cq,
-                                const std::vector<std::string>& parts);
-    void HandleMenuCallback(const dto::TgCallbackQuery& cq, const std::vector<std::string>& parts);
+    // Хендлеры возвращают текст toast-ответа (пустая строка = тихое подтверждение).
+    // Сам answerCallbackQuery вызывается ровно один раз в Route().
+    std::string HandleTaskCallback(const dto::TgCallbackQuery& cq,
+                                   const std::vector<std::string>& parts);
+    std::string HandleFocusCallback(const dto::TgCallbackQuery& cq,
+                                    const std::vector<std::string>& parts);
+    std::string HandleReminderCallback(const dto::TgCallbackQuery& cq,
+                                       const std::vector<std::string>& parts);
+    std::string HandleMenuCallback(const dto::TgCallbackQuery& cq,
+                                   const std::vector<std::string>& parts);
     void AnswerCallback(const std::string& callback_id, const std::string& text = "",
                         bool show_alert = false);
+
+    // Резолвит внутренний UUID пользователя по Telegram-id (БД хранит uuid, а не tg-id).
+    // Возвращает "" если пользователь не найден.
+    std::string ResolveUserId(int64_t tg_id);
 
     services::TaskService& task_service_;
     services::FocusService& focus_service_;
     services::ReminderService& reminder_service_;
     services::NotificationService& notification_service_;
     services::ConversationService& conv_service_;
+    services::UserService& user_service_;
 
     scenes::CreateTaskScene& create_task_scene_;
     scenes::EditTaskScene& edit_task_scene_;
     scenes::FocusScene& focus_scene_;
+    scenes::SettingsScene& settings_scene_;
 };
 
 }  // namespace focusforge::telegram

@@ -21,6 +21,12 @@ class KeyboardBuilder {
                                                    const std::string& cancel_cb);
     static dto::InlineKeyboardMarkup WeeklyReviewActions();
     static dto::InlineKeyboardMarkup SkipButton(const std::string& callback_data);
+
+    // ── Settings ────────────────────────────────────────────────────────────
+    // Меню настроек: кнопка на каждое редактируемое поле
+    static dto::InlineKeyboardMarkup SettingsMenu();
+    // Пикер часовых поясов (популярные зоны + ручной ввод + назад)
+    static dto::InlineKeyboardMarkup TimezonePicker();
 };
 
 }  // namespace focusforge::telegram

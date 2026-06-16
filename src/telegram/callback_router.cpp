@@ -7,9 +7,13 @@
 #include "services/notification_service.hpp"
 #include "services/reminder_service.hpp"
 #include "services/task_service.hpp"
+#include "services/user_service.hpp"
+#include "telegram/keyboard_builder.hpp"
+#include "telegram/reply_builder.hpp"
 #include "telegram/scenes/create_task_scene.hpp"
 #include "telegram/scenes/edit_task_scene.hpp"
 #include "telegram/scenes/focus_scene.hpp"
+#include "telegram/scenes/settings_scene.hpp"
 
 #include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
@@ -24,9 +28,11 @@ CallbackRouter::CallbackRouter(const userver::components::ComponentConfig& cfg,
     , reminder_service_(ctx.FindComponent<services::ReminderService>())
     , notification_service_(ctx.FindComponent<services::NotificationService>())
     , conv_service_(ctx.FindComponent<services::ConversationService>())
+    , user_service_(ctx.FindComponent<services::UserService>())
     , create_task_scene_(ctx.FindComponent<scenes::CreateTaskScene>())
     , edit_task_scene_(ctx.FindComponent<scenes::EditTaskScene>())
-    , focus_scene_(ctx.FindComponent<scenes::FocusScene>()) {}
+    , focus_scene_(ctx.FindComponent<scenes::FocusScene>())
+    , settings_scene_(ctx.FindComponent<scenes::SettingsScene>()) {}
 
 void CallbackRouter::Route(const dto::TgCallbackQuery& cq) {
     const auto parts = core::Split(cq.data, ':');
@@ -59,15 +65,19 @@ void CallbackRouter::Route(const dto::TgCallbackQuery& cq) {
             return;
         }
 
+        std::string toast;
         if (parts[0] == "task")
-            HandleTaskCallback(cq, parts);
+            toast = HandleTaskCallback(cq, parts);
         else if (parts[0] == "focus")
-            HandleFocusCallback(cq, parts);
+            toast = HandleFocusCallback(cq, parts);
         else if (parts[0] == "reminder")
-            HandleReminderCallback(cq, parts);
+            toast = HandleReminderCallback(cq, parts);
         else if (parts[0] == "menu")
-            HandleMenuCallback(cq, parts);
-        AnswerCallback(cq.id);
+            toast = HandleMenuCallback(cq, parts);
+        else if (parts[0] == "set")
+            toast = settings_scene_.HandleCallback(cq, parts);
+        // Единственная точка ответа на нажатие — гасит индикатор «загрузка»
+        AnswerCallback(cq.id, toast);
     } catch (const core::NotFoundError& e) {
         AnswerCallback(cq.id, "Не найдено", true);
     } catch (const core::ConflictError& e) {
@@ -80,62 +90,106 @@ void CallbackRouter::Route(const dto::TgCallbackQuery& cq) {
     }
 }
 
-void CallbackRouter::HandleTaskCallback(const dto::TgCallbackQuery& cq,
-                                        const std::vector<std::string>& parts) {
+std::string CallbackRouter::HandleTaskCallback(const dto::TgCallbackQuery& cq,
+                                               const std::vector<std::string>& parts) {
     if (parts.size() < 3)
-        return;
+        return "";
     const auto& action = parts[1];
     const auto& task_id = parts[2];
-    const bool confirmed = (parts.size() > 3 && parts[3] == "confirm");
-    const std::string user_id = std::to_string(cq.from.id);
+    const std::string extra = parts.size() > 3 ? parts[3] : "";
+    const std::string user_id = ResolveUserId(cq.from.id);
+    if (user_id.empty())
+        return "Сначала /start";
+    const int64_t chat_id = cq.message.chat.id;
+    const int64_t message_id = cq.message.message_id;
+
+    // Перерисовывает исходное сообщение-карточку под новый статус задачи
+    auto edit_card = [&](const domain::Task& t) {
+        dto::EditMessageRequest e;
+        e.chat_id = chat_id;
+        e.message_id = message_id;
+        e.text = ReplyBuilder::TaskBodyText(t);
+        e.reply_markup = KeyboardBuilder::TaskActions(t.id, t.status);
+        notification_service_.EditMessageText(e);
+    };
 
     if (action == "done") {
-        // ChangeStatus читает version из БД сам
-        task_service_.ChangeStatus(task_id, user_id, domain::TaskStatus::kDone);
-        notification_service_.SendMessage(cq.message.chat.id, "✅ Задача выполнена!");
+        edit_card(task_service_.ChangeStatus(task_id, user_id, domain::TaskStatus::kDone));
+        return "✅ Выполнено";
 
     } else if (action == "progress") {
-        task_service_.ChangeStatus(task_id, user_id, domain::TaskStatus::kInProgress);
-        notification_service_.SendMessage(cq.message.chat.id, "🔄 Задача в работе!");
+        edit_card(task_service_.ChangeStatus(task_id, user_id, domain::TaskStatus::kInProgress));
+        return "🔄 В работе";
 
-    } else if (action == "pause_task") {
-        task_service_.ChangeStatus(task_id, user_id, domain::TaskStatus::kPaused);
-        notification_service_.SendMessage(cq.message.chat.id, "⏸ Задача приостановлена.");
+    } else if (action == "pause") {
+        edit_card(task_service_.ChangeStatus(task_id, user_id, domain::TaskStatus::kPaused));
+        return "⏸ На паузе";
 
     } else if (action == "edit") {
         dto::TgMessage msg = cq.message;
         msg.from = cq.from;
         edit_task_scene_.Start(msg, task_id);
+        return "";
 
     } else if (action == "delete") {
-        if (!confirmed) {
-            // Показываем confirm — пользователь должен нажать ещё раз
-            notification_service_.SendMessage(cq.message.chat.id,
-                                              "⚠️ Удалить задачу? Нажми ещё раз для подтверждения:");
-            // В реальности: отправить новое сообщение с confirm-кнопкой
-        } else {
+        if (extra == "confirm") {
             dto::DeleteTaskRequest req;
             req.task_id = task_id;
             req.user_id = user_id;
             task_service_.DeleteTask(req);
-            notification_service_.SendMessage(cq.message.chat.id, "🗑 Задача удалена.");
+            // Убираем кнопки (editMessageText без reply_markup) и помечаем удаление
+            dto::EditMessageRequest e;
+            e.chat_id = chat_id;
+            e.message_id = message_id;
+            e.text = "🗑 <b>Задача удалена.</b>";
+            notification_service_.EditMessageText(e);
+            return "Удалено";
+        } else if (extra == "cancel") {
+            // Восстанавливаем исходную карточку с обычными кнопками
+            edit_card(task_service_.GetTask(task_id, user_id));
+            return "Отменено";
         }
+        // Первый клик — заменяем клавиатуру на «✅ Да / ❌ Нет»
+        dto::EditMessageRequest e;
+        e.chat_id = chat_id;
+        e.message_id = message_id;
+        e.text = "⚠️ <b>Удалить задачу?</b> Действие необратимо.";
+        e.reply_markup = KeyboardBuilder::ConfirmCancel("task:delete:" + task_id + ":confirm",
+                                                        "task:delete:" + task_id + ":cancel");
+        notification_service_.EditMessageText(e);
+        return "";
     }
+    return "";
 }
 
-void CallbackRouter::HandleFocusCallback(const dto::TgCallbackQuery& cq,
-                                         const std::vector<std::string>& parts) {
+std::string CallbackRouter::HandleFocusCallback(const dto::TgCallbackQuery& cq,
+                                                const std::vector<std::string>& parts) {
     if (parts.size() < 3)
-        return;
+        return "";
     const auto& action = parts[1];
     const auto& session_id = parts[2];
     const bool confirmed = (parts.size() > 3 && parts[3] == "confirm");
-    const std::string user_id = std::to_string(cq.from.id);
+    const std::string user_id = ResolveUserId(cq.from.id);
+    if (user_id.empty())
+        return "Сначала /start";
+    const int64_t chat_id = cq.message.chat.id;
+    const int64_t message_id = cq.message.message_id;
+
+    // Перерисовывает карточку сессии под новый статус (переиспользует ReplyBuilder)
+    auto edit_session = [&](const domain::FocusSession& s) {
+        auto card = ReplyBuilder::SessionCard(chat_id, s);
+        dto::EditMessageRequest e;
+        e.chat_id = chat_id;
+        e.message_id = message_id;
+        e.text = card.text;
+        e.reply_markup = card.reply_markup;
+        notification_service_.EditMessageText(e);
+    };
 
     if (action == "stop") {
         if (!confirmed) {
-            // Повторный запрос подтверждения уже отправлен в FocusScene::HandleStop
-            return;
+            // Запрос подтверждения уже показан FocusScene::HandleStop
+            return "";
         }
         dto::StopFocusSessionRequest req;
         req.session_id = session_id;
@@ -143,35 +197,44 @@ void CallbackRouter::HandleFocusCallback(const dto::TgCallbackQuery& cq,
         req.confirmed = true;
         req.completed = true;
         auto updated = focus_service_.StopSession(req);
-        notification_service_.SendSessionCompleted(cq.message.chat.id, updated);
+        // Убираем кнопки у исходного сообщения и шлём итоговую сводку
+        dto::EditMessageRequest e;
+        e.chat_id = chat_id;
+        e.message_id = message_id;
+        e.text = "🛑 <b>Сессия завершена.</b>";
+        notification_service_.EditMessageText(e);
+        notification_service_.SendSessionCompleted(chat_id, updated);
+        return "🛑 Завершено";
 
     } else if (action == "pause") {
         dto::PauseFocusSessionRequest req;
         req.session_id = session_id;
         req.user_id = user_id;
-        auto updated = focus_service_.PauseSession(req);
-        notification_service_.SendMessage(cq.message.chat.id, "⏸ Сессия на паузе.");
+        edit_session(focus_service_.PauseSession(req));
+        return "⏸ На паузе";
 
     } else if (action == "resume") {
         dto::ResumeFocusSessionRequest req;
         req.session_id = session_id;
         req.user_id = user_id;
-        focus_service_.ResumeSession(req);
-        notification_service_.SendMessage(cq.message.chat.id, "▶️ Сессия продолжена!");
+        edit_session(focus_service_.ResumeSession(req));
+        return "▶️ Продолжено";
 
     } else if (action == "cancel") {
-        // Отмена диалога — ничего не делаем
-        AnswerCallback(cq.id, "Отменено");
+        return "Отменено";
     }
+    return "";
 }
 
-void CallbackRouter::HandleReminderCallback(const dto::TgCallbackQuery& cq,
-                                            const std::vector<std::string>& parts) {
+std::string CallbackRouter::HandleReminderCallback(const dto::TgCallbackQuery& cq,
+                                                   const std::vector<std::string>& parts) {
     if (parts.size() < 3)
-        return;
+        return "";
     const auto& action = parts[1];
     const auto& reminder_id = parts[2];
-    const std::string user_id = std::to_string(cq.from.id);
+    const std::string user_id = ResolveUserId(cq.from.id);
+    if (user_id.empty())
+        return "Сначала /start";
 
     if (action == "snooze") {
         int minutes = 60;
@@ -186,41 +249,56 @@ void CallbackRouter::HandleReminderCallback(const dto::TgCallbackQuery& cq,
         req.user_id = user_id;
         req.snooze_minutes = minutes;
         reminder_service_.SnoozeReminder(req);
-        AnswerCallback(cq.id, "Отложено на " + std::to_string(minutes) + " мин ✅");
+        return "Отложено на " + std::to_string(minutes) + " мин ✅";
 
     } else if (action == "cancel") {
-        // Отменить напоминание
-        notification_service_.SendMessage(cq.message.chat.id, "🔕 Напоминание отключено.");
+        // Реально деактивируем напоминание + убираем кнопки у сообщения
+        reminder_service_.CancelReminder(reminder_id, user_id);
+        dto::EditMessageRequest e;
+        e.chat_id = cq.message.chat.id;
+        e.message_id = cq.message.message_id;
+        e.text = "🔕 <b>Напоминание отключено.</b>";
+        notification_service_.EditMessageText(e);
+        return "Отключено";
     }
+    return "";
 }
 
-void CallbackRouter::HandleMenuCallback(const dto::TgCallbackQuery& cq,
-                                        const std::vector<std::string>& parts) {
+std::string CallbackRouter::HandleMenuCallback(const dto::TgCallbackQuery& cq,
+                                               const std::vector<std::string>& parts) {
     if (parts.size() < 2)
-        return;
+        return "";
     const auto& action = parts[1];
-    // Команды главного меню — просто шлём сообщение-подсказку
-    // Полный роутинг — в telegram::Router через HandleCommand
-    std::string hint;
+    // Кнопки главного меню подсказывают соответствующую команду (toast, без
+    // засорения чата). Полноценный роутинг меню — задача Tier-2.
     if (action == "tasks")
-        hint = "Используй /tasks";
-    else if (action == "focus")
-        hint = "Используй /focus";
-    else if (action == "stats")
-        hint = "Используй /stats";
-    else if (action == "plan")
-        hint = "Используй /plan";
-    else if (action == "settings")
-        hint = "Используй /settings";
-    if (!hint.empty())
-        notification_service_.SendMessage(cq.message.chat.id, hint);
+        return "Открой /tasks";
+    if (action == "newtask")
+        return "Создать: /task";
+    if (action == "focus")
+        return "Запусти /focus";
+    if (action == "stats")
+        return "Смотри /stats";
+    if (action == "plan")
+        return "План: /plan";
+    if (action == "settings")
+        return "Настройки: /settings";
+    return "";
 }
 
-void CallbackRouter::AnswerCallback(const std::string& /*id*/, const std::string& text,
-                                    bool /*show_alert*/) {
-    // В реальности вызываем Telegram answerCallbackQuery API через NotificationService
+void CallbackRouter::AnswerCallback(const std::string& id, const std::string& text,
+                                    bool show_alert) {
+    dto::AnswerCallbackRequest req;
+    req.callback_query_id = id;
     if (!text.empty())
-        LOG_DEBUG() << "Callback answer: " << text;
+        req.text = text;
+    req.show_alert = show_alert;
+    notification_service_.AnswerCallbackQuery(req);
+}
+
+std::string CallbackRouter::ResolveUserId(int64_t tg_id) {
+    auto user = user_service_.GetByTelegramId(tg_id);
+    return user ? user->id : std::string{};
 }
 
 }  // namespace focusforge::telegram

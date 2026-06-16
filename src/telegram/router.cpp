@@ -10,6 +10,7 @@
 #include "scenes/focus_scene.hpp"
 #include "scenes/reminder_scene.hpp"
 #include "scenes/review_scene.hpp"
+#include "scenes/settings_scene.hpp"
 #include "scenes/start_scene.hpp"
 #include "services/analytics_service.hpp"
 #include "services/conversation_service.hpp"
@@ -20,6 +21,7 @@
 #include "services/task_service.hpp"
 #include "services/user_service.hpp"
 #include "telegram/messages/templates.hpp"
+#include "telegram/reply_builder.hpp"
 
 #include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
@@ -34,6 +36,7 @@ Router::Router(const userver::components::ComponentConfig& cfg,
     , focus_scene_(ctx.FindComponent<scenes::FocusScene>())
     , reminder_scene_(ctx.FindComponent<scenes::ReminderScene>())
     , review_scene_(ctx.FindComponent<scenes::ReviewScene>())
+    , settings_scene_(ctx.FindComponent<scenes::SettingsScene>())
     , conv_service_(ctx.FindComponent<services::ConversationService>())
     , user_service_(ctx.FindComponent<services::UserService>())
     , notify_(ctx.FindComponent<services::NotificationService>())
@@ -97,27 +100,14 @@ void Router::HandleCommand(const dto::TgMessage& msg, const std::string& cmd,
             notify_.SendMessage(msg.chat.id, "📋 <b>Задач нет</b>\n\nСоздай первую командой /task");
             return;
         }
-        std::string text = "📋 <b>Мои задачи</b> (" + std::to_string(total) + ")\n\n";
-        for (const auto& t : tasks) {
-            text += domain::StatusEmoji(t.status) + " ";
-            text += domain::PriorityEmoji(t.priority) + " ";
-            text += "<b>" + core::EscapeHtml(core::Truncate(t.title, 40)) + "</b>";
-            if (t.deadline) {
-                text += "  📅 " + core::FormatDate(*t.deadline);
-                if (t.IsOverdue())
-                    text += " ⚠️";
-            }
-            if (!t.tags.empty()) {
-                text += "\n    ";
-                for (const auto& tag : t.tags)
-                    text += "#" + tag.name + " ";
-            }
-            text += "\n";
-        }
-        if (total > 10)
-            text += "\n<i>...ещё " + std::to_string(total - 10) + " задач</i>";
-        text += "\n➕ /task — добавить задачу";
-        notify_.SendMessage(msg.chat.id, text);
+        // Заголовок-сводка, затем по карточке на задачу — каждая со своими
+        // кнопками (▶️/✅/✏️/🗑), чтобы действия работали прямо из списка.
+        std::string header = "📋 <b>Мои задачи</b> (" + std::to_string(total) + ")";
+        if (total > static_cast<int>(tasks.size()))
+            header += "\n<i>Показаны первые " + std::to_string(tasks.size()) + "</i>";
+        notify_.SendMessage(msg.chat.id, header);
+        for (const auto& t : tasks)
+            notify_.SendRequest(ReplyBuilder::TaskCardActions(msg.chat.id, t));
         return;
     }
 
@@ -281,22 +271,7 @@ void Router::HandleCommand(const dto::TgMessage& msg, const std::string& cmd,
 
     // ── Настройки ─────────────────────────────────────────────────────────────
     if (cmd == "settings") {
-        auto user_opt = user_service_.GetByTelegramId(tg_id);
-        if (!user_opt) {
-            notify_.SendMessage(msg.chat.id, messages::kErrorGeneral);
-            return;
-        }
-        const auto& s = user_opt->settings;
-        std::string text = "⚙️ <b>Настройки</b>\n\n";
-        text += "🌍 Часовой пояс: <b>" + s.timezone + "</b>\n";
-        text += "🍅 Pomodoro: <b>" + std::to_string(s.pomodoro_work_minutes) + " / " +
-                std::to_string(s.pomodoro_break_minutes) + " мин</b>\n";
-        text += "🧘 Deep Work: <b>" + std::to_string(s.deep_work_minutes) + " мин</b>\n";
-        text += "🎯 Цель фокуса в день: <b>" + std::to_string(s.daily_focus_goal_minutes) +
-                " мин</b>\n";
-        text += "📅 Цель фокуса в неделю: <b>" + std::to_string(s.weekly_focus_goal_minutes) +
-                " мин</b>";
-        notify_.SendMessage(msg.chat.id, text);
+        settings_scene_.Show(msg);
         return;
     }
 
@@ -323,8 +298,18 @@ void Router::HandleFreeText(const dto::TgMessage& msg) {
         reminder_scene_.HandleText(msg, state);
     } else if (state.find("REVIEW_") == 0) {
         review_scene_.HandleText(msg, state);
+    } else if (state.find("SETTINGS_") == 0) {
+        settings_scene_.HandleText(msg, state);
+    } else {
+        // Свободный текст без активного сценария — мягко направляем к командам,
+        // чтобы бот не выглядел «зависшим».
+        notify_.SendMessage(msg.chat.id,
+                            "🤔 Не понял. Быстрые команды:\n"
+                            "• /task — новая задача\n"
+                            "• /tasks — список задач\n"
+                            "• /focus — фокус-сессия\n"
+                            "• /help — все команды");
     }
-    // else: свободный текст без контекста — молчим
 }
 
 void Router::HandleCallbackQuery(const dto::TgCallbackQuery& cq) {
