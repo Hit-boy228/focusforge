@@ -24,8 +24,12 @@ class ReplyBuilder {
     static dto::SendMessageRequest ConfirmDialog(int64_t chat_id, const std::string& text,
                                                  const std::string& confirm_callback,
                                                  const std::string& cancel_callback);
-    // Карточка задачи
+    // Карточка только что созданной задачи (заголовок «Задача создана!»)
     static dto::SendMessageRequest TaskCard(int64_t chat_id, const domain::Task& task);
+    // Карточка существующей задачи с кнопками действий (для /tasks)
+    static dto::SendMessageRequest TaskCardActions(int64_t chat_id, const domain::Task& task);
+    // Тело карточки задачи (статус, приоритет, дедлайн, теги) — для editMessageText
+    static std::string TaskBodyText(const domain::Task& task);
     // Список задач
     static dto::SendMessageRequest TaskList(int64_t chat_id, const std::vector<domain::Task>& tasks,
                                             int total, const std::string& title = "");

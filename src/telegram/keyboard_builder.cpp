@@ -76,6 +76,34 @@ dto::InlineKeyboardMarkup KeyboardBuilder::ConfirmCancel(const std::string& conf
     return {{Btn{"✅ Да", confirm_cb, ""}, Btn{"❌ Нет", cancel_cb, ""}}};
 }
 
+dto::InlineKeyboardMarkup KeyboardBuilder::SettingsMenu() {
+    return {
+        {Btn{"🌍 Часовой пояс", "set:tz", ""}},
+        {Btn{"🍅 Pomodoro работа", "set:field:pomodoro_work", ""},
+         Btn{"☕ Перерыв", "set:field:pomodoro_break", ""}},
+        {Btn{"🧠 Deep Work", "set:field:deep_work", ""}},
+        {Btn{"🎯 Цель / день", "set:field:daily_goal", ""},
+         Btn{"📅 Цель / неделя", "set:field:weekly_goal", ""}},
+    };
+}
+
+dto::InlineKeyboardMarkup KeyboardBuilder::TimezonePicker() {
+    // callback_data: set:tz:<IANA-зона>. Имена зон не содержат ':' — безопасно
+    // для разбора по двоеточию. '/' внутри зоны остаётся в parts[2].
+    return {
+        {Btn{"🇷🇺 Калининград (МСК-1)", "set:tz:Europe/Kaliningrad", ""}},
+        {Btn{"🇷🇺 Москва (МСК)", "set:tz:Europe/Moscow", ""}},
+        {Btn{"🇷🇺 Самара (МСК+1)", "set:tz:Europe/Samara", ""}},
+        {Btn{"🇷🇺 Екатеринбург (МСК+2)", "set:tz:Asia/Yekaterinburg", ""}},
+        {Btn{"🇷🇺 Новосибирск (МСК+4)", "set:tz:Asia/Novosibirsk", ""}},
+        {Btn{"🇷🇺 Иркутск (МСК+5)", "set:tz:Asia/Irkutsk", ""}},
+        {Btn{"🇷🇺 Владивосток (МСК+7)", "set:tz:Asia/Vladivostok", ""}},
+        {Btn{"🇬🇧 Лондон", "set:tz:Europe/London", ""}, Btn{"🌐 UTC", "set:tz:UTC", ""}},
+        {Btn{"✏️ Ввести вручную", "set:tz:manual", ""}},
+        {Btn{"🔙 Назад", "set:back", ""}},
+    };
+}
+
 dto::InlineKeyboardMarkup KeyboardBuilder::WeeklyReviewActions() {
     return {
         {Btn{"📊 Подробнее", "review:details", ""}, Btn{"📤 Экспорт", "review:export", ""}},

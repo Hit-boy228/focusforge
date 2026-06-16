@@ -74,6 +74,7 @@
 #include "telegram/scenes/focus_scene.hpp"
 #include "telegram/scenes/reminder_scene.hpp"
 #include "telegram/scenes/review_scene.hpp"
+#include "telegram/scenes/settings_scene.hpp"
 #include "telegram/scenes/start_scene.hpp"
 
 // Observability
@@ -141,6 +142,7 @@ void AppendComponents(userver::components::ComponentList& list) {
     list.Append<telegram::scenes::FocusScene>();
     list.Append<telegram::scenes::ReminderScene>();
     list.Append<telegram::scenes::ReviewScene>();
+    list.Append<telegram::scenes::SettingsScene>();
     list.Append<telegram::CallbackRouter>();
     list.Append<telegram::Router>();
 

@@ -153,6 +153,7 @@ components_manager:
     scene-focus: {}
     scene-reminder: {}
     scene-review: {}
+    scene-settings: {}
     callback-router: {}
     telegram-router: {}
 

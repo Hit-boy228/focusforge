@@ -26,6 +26,13 @@ class NotificationService final : public userver::components::ComponentBase {
     // Отправляет полный запрос — включая inline-клавиатуру если задана
     void SendRequest(const dto::SendMessageRequest& req);
 
+    // Редактирует текст/клавиатуру существующего сообщения (editMessageText)
+    void EditMessageText(const dto::EditMessageRequest& req);
+
+    // Отвечает на нажатие inline-кнопки (answerCallbackQuery) —
+    // убирает крутящийся индикатор «загрузка» и опционально показывает toast/alert
+    void AnswerCallbackQuery(const dto::AnswerCallbackRequest& req);
+
     void SendSessionStarted(int64_t chat_id, const domain::FocusSession& s);
     void SendSessionCompleted(int64_t chat_id, const domain::FocusSession& s);
     void SendReminder(int64_t chat_id, const domain::Reminder& r);
@@ -34,6 +41,9 @@ class NotificationService final : public userver::components::ComponentBase {
    private:
     std::string BuildApiUrl(const std::string& method) const;
     void PostToTelegramApi(const std::string& method, const userver::formats::json::Value& body);
+
+    // Сериализует inline-клавиатуру в JSON-формат Telegram (inline_keyboard)
+    static userver::formats::json::Value SerializeKeyboard(const dto::InlineKeyboardMarkup& kb);
 
     userver::clients::http::Client& http_client_;
     std::string bot_token_;

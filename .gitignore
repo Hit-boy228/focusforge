@@ -25,6 +25,7 @@ conan_provider.cmake
 conaninfo.txt
 conanbuildinfo.*
 conan_paths.cmake
+CMakeUserPresets.json
 graph_info.json
 
 # Environment & secrets — NEVER commit these

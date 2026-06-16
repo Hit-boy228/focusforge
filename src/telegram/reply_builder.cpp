@@ -49,9 +49,8 @@ dto::SendMessageRequest ReplyBuilder::ConfirmDialog(int64_t chat_id, const std::
     }();
 }
 
-dto::SendMessageRequest ReplyBuilder::TaskCard(int64_t chat_id, const domain::Task& t) {
+std::string ReplyBuilder::TaskBodyText(const domain::Task& t) {
     std::string text;
-    text += "✅ <b>Задача создана!</b>\n\n";
     text += domain::StatusEmoji(t.status) + " <b>" + core::EscapeHtml(t.title) + "</b>\n";
     text += domain::PriorityEmoji(t.priority) + " " + domain::ToString(t.priority) + "\n";
     if (t.deadline) {
@@ -73,8 +72,16 @@ dto::SendMessageRequest ReplyBuilder::TaskCard(int64_t chat_id, const domain::Ta
                 std::to_string(t.subtasks.size()) + " подзадач\n";
         text += core::ProgressBar(t.SubtaskCompletionRate()) + "\n";
     }
-    text += "\n<code>" + t.id.substr(0, 8) + "</code>";
+    return text;
+}
+
+dto::SendMessageRequest ReplyBuilder::TaskCard(int64_t chat_id, const domain::Task& t) {
+    std::string text = "✅ <b>Задача создана!</b>\n\n" + TaskBodyText(t);
     return Prompt(chat_id, text, KeyboardBuilder::TaskActions(t.id, t.status));
+}
+
+dto::SendMessageRequest ReplyBuilder::TaskCardActions(int64_t chat_id, const domain::Task& t) {
+    return Prompt(chat_id, TaskBodyText(t), KeyboardBuilder::TaskActions(t.id, t.status));
 }
 
 dto::SendMessageRequest ReplyBuilder::TaskList(int64_t chat_id,

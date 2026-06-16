@@ -29,6 +29,9 @@ class ReminderService final : public userver::components::ComponentBase {
     /// Откладывает напоминание (snooze) с записью причины
     void SnoozeReminder(const dto::SnoozeReminderRequest& req);
 
+    /// Отменяет (деактивирует) напоминание
+    void CancelReminder(const std::string& reminder_id, const std::string& user_id);
+
     std::vector<domain::Reminder> GetUserReminders(const std::string& user_id);
 
     /// Вызывается шедулером каждые 30 сек — отправляет просроченные напоминания

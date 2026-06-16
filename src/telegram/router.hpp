@@ -15,6 +15,7 @@ class EditTaskScene;
 class FocusScene;
 class ReminderScene;
 class ReviewScene;
+class SettingsScene;
 }  // namespace focusforge::telegram::scenes
 namespace focusforge::services {
 class ConversationService;
@@ -47,6 +48,7 @@ class Router final : public userver::components::ComponentBase {
     scenes::FocusScene& focus_scene_;
     scenes::ReminderScene& reminder_scene_;
     scenes::ReviewScene& review_scene_;
+    scenes::SettingsScene& settings_scene_;
     services::ConversationService& conv_service_;
     services::UserService& user_service_;
     services::NotificationService& notify_;
